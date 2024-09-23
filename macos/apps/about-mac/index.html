@@ -1,43 +1,48 @@
 <template>
   <app-about>
-    <mac-window width="350" height="294">
-      <mac-window-chrome>
-        <chrome-close></chrome-close>
-        <span>About This Computer</span>
-        <chrome-shrink></chrome-shrink>
-        <chrome-collapse></chrome-collapse>
-      </mac-window-chrome>
-      <mac-window-content>
-        <ui-frame>
-          <ui-frame white nopad>
-            <img src="images/about.png" width="300" />
-          </ui-frame>
-          <p>
-            <strong>Version:</strong> Mac OS 9.2.2
-          </p>
-          <p>
-            <strong>Built-in Memory:</strong> 256 MB
-          </p>
-          <p>
-            <strong>Virtual Memory:</strong> Off
-          </p>
-          <p>
-            <strong>Largest Unused Block:</strong> 220.8 MB
-          </p>
-        <ui-frame white>
-          <p>
-            This site plays homage to the classic Mac OS 9 operating system. This operating system was released in 1999 and was the last version of the classic Mac OS. It was succeeded by Mac OS X in 2001. Mac OS 9 introduced many new features, such as multiple users, voiceprint password, and voice control.
-          </p>
-          <p>
-            It also introduced the "Platinum" interface, which was a major design overhaul from the previous "Aqua" interface.
-          </p>
-          <p>
-            This site is a recreation of the Mac OS 9 operating system, and is not affiliated with Apple Inc.
-          </p>
-        </ui-frame>
-        </ui-frame>
-      </mac-window-content>
-    </mac-window>
+    <menu-segment></menu-segment>
+    <template window="about">
+      <mac-window-controller>
+        <mac-window width="350" height="294">
+          <mac-window-chrome>
+            <chrome-close></chrome-close>
+            <span>About This Computer</span>
+            <chrome-shrink></chrome-shrink>
+            <chrome-collapse></chrome-collapse>
+          </mac-window-chrome>
+          <mac-window-content>
+            <ui-frame>
+              <ui-frame white nopad>
+                <img src="images/about.png" width="300" />
+              </ui-frame>
+              <p>
+                <strong>Version:</strong> Mac OS 9.2.2
+              </p>
+              <p>
+                <strong>Built-in Memory:</strong> 256 MB
+              </p>
+              <p>
+                <strong>Virtual Memory:</strong> Off
+              </p>
+              <p>
+                <strong>Largest Unused Block:</strong> 220.8 MB
+              </p>
+            <ui-frame white>
+              <p>
+                This site plays homage to the classic Mac OS 9 operating system. This operating system was released in 1999 and was the last version of the classic Mac OS. It was succeeded by Mac OS X in 2001. Mac OS 9 introduced many new features, such as multiple users, voiceprint password, and voice control.
+              </p>
+              <p>
+                It also introduced the "Platinum" interface, which was a major design overhaul from the previous "Aqua" interface.
+              </p>
+              <p>
+                This site is a recreation of the Mac OS 9 operating system, and is not affiliated with Apple Inc.
+              </p>
+            </ui-frame>
+            </ui-frame>
+          </mac-window-content>
+        </mac-window>
+    </template>
+    </mac-window-controller>
   </app-about>
 </template>
 
@@ -49,7 +54,10 @@
       }
 
       get name() { return 'About' }
-      newWindow = () => {}
+      get icon() { return 'apps/about-mac/icon.png' }
+      newWindow = () => {
+        this.spawnWindowFromTemplate('about');
+      }
     }
 
 

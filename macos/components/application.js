@@ -44,12 +44,12 @@ class MacApplication extends HTMLElement {
     }
   }
   
-  focus = () => {        
+  focus = () => {
     // If already focused, return
     if (MacApplication.#activeApplication === this) return;
     
-    // Blur active application
-    MacApplication.#activeApplication?.blur?.();
+    // Blur all other applications
+    MacApplication.blurAll(this);
 
     MacApplication.#activeApplication = this;
     MacApplication.#eventBus.addEventListener('action', this.#onAction);
@@ -155,9 +155,10 @@ class MacApplication extends HTMLElement {
   }
 
   /** Blurs all applications */
-  static blurAll = () => {
-    document.querySelectorAll('mac-window').forEach(app => app.blur());
-    MacApplication.#processes.forEach(p => p.application.blur());
+  static blurAll = (exclude) => {
+    MacApplication.#processes.forEach(p => {
+      if (p.application !== exclude) p.application.blur()
+    });
     this.#activeApplication = null;
   }
 

@@ -185,7 +185,7 @@ export class MacWindow extends HTMLElement {
   /** Makes the window inactive
    * @returns {void}
    * */
-  blur() {
+  blur = () => {
     this.removeAttribute('active');
     this.#children.forEach(w => w.removeAttribute('active'));
   }
@@ -344,11 +344,17 @@ class MacWindowController extends HTMLElement {
 
   focus = () => {
     this.querySelector('mac-window').focus();
+    this.onFocus?.();
   }
 
   close = () => {
     this.querySelector('mac-window').close();
     this.onClose?.();
+  }
+
+  blur = () => {
+    this.querySelector('mac-window').blur();
+    this.onBlur?.();
   }
 
   get isFocused() {

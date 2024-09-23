@@ -123,7 +123,6 @@ if (typeof FinderApp === 'undefined') {
      * @param {boolean} state - Whether the file is open or not
      */
     static setFileState(target, state) {
-      console.error('Setting file state', target, state);
       if (state) {
         FinderApp.#openFiles.push(target);
       } else {
