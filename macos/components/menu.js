@@ -1,21 +1,43 @@
 class MenuBar extends HTMLElement {
   static #primaryMenu;
-  static #finderSegment;
   static #about;
+  
+  #startingMenuItem;
 
   constructor() {
     super();    
-    MenuBar.#finderSegment = document.querySelector('menu-segment#finder-segment');
     MenuBar.#about = document.querySelector('menu-dropdown-item#menu-about');
     MenuBar.#primaryMenu = this;
   }
 
   static replaceSegment(menu) {
-    if (!menu) {
-      MenuBar.#primaryMenu.querySelector('menu-segment').replaceWith(MenuBar.#finderSegment);
-    } else {
-      MenuBar.#primaryMenu.querySelector('menu-segment').replaceWith(menu);
+    MenuBar.#primaryMenu.querySelector('menu-segment').replaceWith(menu);
+  }
+
+  static updateMenuItem(identifier, state) {
+    const menuItem = MenuBar.#primaryMenu.querySelector(`menu-item${identifer}`);
+    if (!menuItem) {
+      console.warn('Menu item not found', identifier);
     }
+    Object.keys(state).forEach(key => {
+      menuItem.setAttribute(key, state[key]);
+    });
+  }
+
+  static updateMenuDropdownItem(identifier, state) {
+    const menuItem = MenuBar.#primaryMenu.querySelector(`menu-dropdown-item${identifier}`);
+    if (!menuItem) {
+      console.warn('Menu item not found', `menu-dropdown-item${identifier}`);
+      return;
+    }
+    Object.keys(state).forEach(key => {
+      if (typeof state[key] === 'boolean') {
+        const fn = (state[key] ? menuItem.setAttribute : menuItem.removeAttribute);
+        fn.call(menuItem, key, '', state[key]);
+      } else {
+        menuItem.setAttribute(key, state[key]);
+      }
+    });
   }
 
   connectedCallback() {
@@ -27,10 +49,13 @@ class MenuBar extends HTMLElement {
         MenuBar.#about.setAttribute('label', 'About ' + MacApplication.activeApplication);
       }
     }, 1000);
+    this.addEventListener('mousedown', this.onMouseDown);
     document.addEventListener('mouseup', this.onMouseUp);
   }
 
   disconnectedCallback() {
+    MenuBar.#about.removeEventListener('activate', this.onAboutClick);
+    this.removeEventListener('mousedown', this.onMouseDown);
     document.removeEventListener('mouseup', this.onMouseUp);
   }
 
@@ -52,7 +77,22 @@ class MenuBar extends HTMLElement {
     }
   }
 
-  onMouseUp() {
+  onMouseDown = (e) => {
+    if (e.target instanceof MenuItem) {
+      this.#startingMenuItem = e.target;
+      this.#startingMenuItem.addEventListener('mouseleave', this.cancelMenuHold);
+    }
+  }
+
+  cancelMenuHold = () => {
+    this.#startingMenuItem.removeEventListener('mouseleave', this.cancelMenuHold);
+    this.#startingMenuItem = null;
+  }
+
+  onMouseUp = (e) => {
+    if (this.#startingMenuItem === e.target) {
+      return;
+    }
     setTimeout(() => {
       MenuItem.active?.removeAttribute?.('open');
       MenuItem.active = undefined;

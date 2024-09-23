@@ -67,6 +67,8 @@
 <script>
 if (typeof FinderApp === 'undefined') {
   class FinderApp extends MacApplication {
+    static #openFiles = [];
+
     constructor() {
       super();
     }
@@ -82,41 +84,56 @@ if (typeof FinderApp === 'undefined') {
       }
       const window = this.spawnWindowFromTemplate('finder');
       window.path = path;
+      FinderApp.#openFiles.push(path);
       return window;
     }
 
     onAction = (source, action, extra) => {
-      if (source === 'icon') {
-        const type = extra.icon.getAttribute('type');
-        if (type === 'folder') {
-          const window = this.newWindow({path: extra.icon.getAttribute('target')});
-          window.path = extra.icon.getAttribute('target');
-        } else if (type === 'app') {
-          MacApplication.spawn(extra.icon.getAttribute('target'));
-        } else {
-          const path = extra.icon.getAttribute('target');
-          MacApplication.openFile(path);
+      ['icon', 'dblclick', () => {
+        const type = extra.icon?.getAttribute?.('type');
+        switch (type) {
+          case 'folder':
+            this.newWindow({path: extra.icon.getAttribute('target')});
+            break;
+          case 'app':
+            MacApplication.spawn(extra.icon.getAttribute('target'))
+            break;
+          default:
+            const path = extra.icon.getAttribute('target');
+            MacApplication.openFile(path);
         }
-      } else if (source === 'menu') {
-        switch (action) {
-          case 'new-folder':
-            break;
-          case 'close':
-            this.activeWindow?.close?.();
-            break;
-          case 'send-to-trash':
-            this.activeWindow?.sendToTrash?.();
-            break;
-          case 'get-info':
-            break;
-          case 'find':
-            break;
-          case 'eject':
-            break;
-          case 'empty-trash':
-            break;
-        }
+      }].act();
+
+      ['menu', 'close', this.activeWindow?.close].act();
+      ['menu', 'send-to-trash', this.activeWindow?.sendToTrash].act();
+      ['application', 'windows-changed', this.updateState].act();
+    }
+
+    updateState = () => {
+      // Update icons
+      const icons = this.querySelectorAll('ui-icons').forEach(it => it.updateState?.());
+      // Update menu
+      const hasWindows = !!this.getWindowControllers().length;
+      MenuBar.updateMenuDropdownItem('[label="Close"]', { disabled: !hasWindows && !!this.activeWindow  });
+    }
+
+    /**
+     * Sets the state of a file or app in Finder to adjust icons
+     * @param {string} target - The path of the file or app
+     * @param {boolean} state - Whether the file is open or not
+     */
+    static setFileState(target, state) {
+      console.error('Setting file state', target, state);
+      if (state) {
+        FinderApp.#openFiles.push(target);
+      } else {
+        FinderApp.#openFiles = FinderApp.#openFiles.filter(file => file !== target);
       }
+      document.querySelector('finder-app').updateState();
+    }
+
+    static getFileState(target) {
+      return FinderApp.#openFiles.includes(target);
     }
   }
 
@@ -129,6 +146,10 @@ if (typeof FinderApp === 'undefined') {
 
     constructor() {
       super();
+    }
+
+    onClose() {
+      FinderApp.setFileState(this.#path, false);
     }
 
     connectedCallback() {
@@ -184,6 +205,8 @@ if (typeof FinderApp === 'undefined') {
       this.querySelector('mac-window-chrome span').textContent = this.#path.split('/').reverse()[0];
     }
   }
+
+  globalThis.FinderApp = FinderApp;
 
   customElements.define('finder-app', FinderApp);
   customElements.define('finder-window', FinderWindow);

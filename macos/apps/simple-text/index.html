@@ -3,10 +3,14 @@
     <menu-segment segment-id="finder">
       <menu-item title="File">
         <menu-dropdown>
+          <menu-dropdown-item label="New" action="new"></menu-dropdown-item>
+          <menu-divider></menu-divider>
           <menu-dropdown-item label="Save" action="save"></menu-dropdown-item>
           <menu-dropdown-item label="Open..." action="open"></menu-dropdown-item>
           <menu-divider></menu-divider>
           <menu-dropdown-item label="Save As..." action="save_as"></menu-dropdown-item>
+          <menu-divider></menu-divider>
+          <menu-dropdown-item label="Quit" action="quit"></menu-dropdown-item>
         </menu-dropdown>
       </menu-item>
       <menu-item title="Edit" disabled></menu-item>
@@ -54,7 +58,6 @@
 <script>
   if (typeof SimpleText === 'undefined') {
     class SimpleText extends MacApplication {
-      #activeWindow;
 
       constructor() {
         super();
@@ -69,11 +72,10 @@
 
       get icon() { return 'apps/simple-text/icon.png' }
 
-      set activeWindow(window) {
-        this.#activeWindow = window;
-      }
-
       onAction = (source, action, detail) => {
+        ['menu', 'new', this.newWindow].act();
+        ['menu', 'quit', this.exit].act();
+
         if (source === 'menu') {
           switch (action) {
             case 'about':
@@ -88,7 +90,7 @@
                   filePicker.addEventListener('select', (e) => {
                     const file = e.detail;
                     if (file instanceof File) {
-                      this.#activeWindow.openFile(file);
+                      this.activeWindow.openFile(file);
                     } else {
                       this.showDialog('Error: Cannot open folders as text');
                     }
@@ -96,20 +98,20 @@
               });
               break;
             case 'save':
-              if (this.#activeWindow.activeFile) {
-                this.#activeWindow.activeFile.write(this.#activeWindow.text);
+              if (this.activeWindow.activeFile) {
+                this.activeWindow.activeFile.write(this.activeWindow.text);
               } else {
                 this.showDialog('Error: No file to save');
               }
               break;
             case 'save_as':
-            MacApplication.spawn('file-picker', { type: 'save-file', file: this.#activeWindow.activeFile })
+            MacApplication.spawn('file-picker', { type: 'save-file', file: this.activeWindow.activeFile })
                 .then(filePicker => {
                   filePicker.addEventListener('select', (e) => {
                     const file = e.detail;
                     if (file instanceof File) {
-                      file.write(this.#activeWindow.text);
-                      this.#activeWindow.openFile(file);
+                      file.write(this.activeWindow.text);
+                      this.activeWindow.openFile(file);
                     } else {
                       this.showDialog('Error: Cannot save folders as text');
                     }
@@ -121,36 +123,41 @@
       }
 
       newWindow = (args) => {
-        const window = this.spawnWindowFromTemplate('editor');
-        this.#activeWindow = window;
-
-        if (args.file) {
+        if (args?.file) {
           const explorer = new VDiskExplorer();
-          const file = explorer.getFile(args.file);
-          if (file) {
-            this.#activeWindow.openFile(file);
-          } 
+          const file = explorer.getFile(args.file);          
+          const activeWindowForFile = this.getWindowControllers().find(window => window.activeFile === file);
+
+          if (activeWindowForFile) {
+            activeWindowForFile.focus();
+            return;
+          }
+
+          const window = this.spawnWindowFromTemplate('editor');
+          window.openFile(file);
+        } else {
+          const window = this.spawnWindowFromTemplate('editor');
         }
       }
     }
 
-    class EditorWindow extends HTMLElement {
+    class EditorWindow extends MacWindowController {
       #activeFile;
 
       constructor() {
         super();
-        this.addEventListener('mousedown', (e) => {
-          e.target.closest('app-simple-text').activeWindow = this;
-        });
       }
 
       openFile(file) {
         this.#activeFile = file;
         this.querySelector('textarea').value = file.read();
         this.querySelector('span').textContent = file.name;
+        FinderApp?.setFileState?.(this.#activeFile?.path, true);
       }
 
-      connectedCallback() {}
+      onClose() {
+        FinderApp?.setFileState?.(this.#activeFile?.path, false);
+      }
 
       get activeFile() {
         return this.#activeFile;

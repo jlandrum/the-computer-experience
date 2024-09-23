@@ -17,7 +17,6 @@ class MacApplication extends HTMLElement {
 
   #menu;
   #isFocused;
-  #activeWindowController;
 
   constructor() {
     super();
@@ -27,15 +26,13 @@ class MacApplication extends HTMLElement {
     this.#menu = this.querySelector('menu-segment');
     this.classList.add('mac-application');
     this.addEventListener('mousedown', this.onMouseDown);
+    FinderApp?.setFileState(this.invokeName, true);
   }
   
   onMouseDown = (e) => {
     // Focus the application
     this.focus();
     // If the target is a window, set it as the active window
-    if (e.target instanceof MacWindow) {
-      this.#activeWindowController = e.target;
-    }
   }
 
   static focus = (app) => {
@@ -55,8 +52,8 @@ class MacApplication extends HTMLElement {
     MacApplication.#activeApplication?.blur?.();
 
     MacApplication.#activeApplication = this;
-    MenuBar.replaceSegment(this.#menu);
     MacApplication.#eventBus.addEventListener('action', this.#onAction);
+    MenuBar.replaceSegment(this.#menu);
     this.#isFocused = true;
   }
 
@@ -79,10 +76,9 @@ class MacApplication extends HTMLElement {
     MacApplication.#eventBus.removeEventListener('action', this.#onAction);
     MacApplication.#activeApplication = null;
     this.#isFocused = false;
-    this.#activeWindowController = null;
   }
 
-  get activeWindow() { return this.#activeWindowController }
+  get activeWindow() { return this.getWindowControllers().find(w => w.isFocused) }
 
   getWindowControllers = () => {
     return Array.from(this.childNodes).filter(c => c instanceof MacWindowController);
@@ -90,7 +86,13 @@ class MacApplication extends HTMLElement {
 
   #onAction = (e) => {
     const { source, action, ...detail } = e.detail;
+    Array.prototype.act = function() {
+      if (this[0] === source && this[1] === action) {
+        this[2]?.(detail);
+      }
+    } 
     this.onAction(source, action, detail);
+    Array.prototype._act = undefined;
   }
   
   /** Applications should provide a getter to get the name. This should NOT change 
@@ -124,7 +126,7 @@ class MacApplication extends HTMLElement {
    * If the application is the last application, the desktop will be focused
    * @returns {void}
    */
-  exit() {
+  exit = () => {
     // Close all windows
     this.getWindowControllers().forEach(w => w.close());
     // Remove the script for the process and the process from the list
@@ -133,8 +135,14 @@ class MacApplication extends HTMLElement {
     MacApplication.#processes.splice(index, 1);
     // Focus the previous process
     MacApplication.#processes[MacApplication.#processes.length - 1]?.application.focus();
+    // Remove from Finder
+    FinderApp.setFileState(this.invokeName, false);
     // Remove the application
     this.remove();
+  }
+
+  notifyWindowsChanged = () => {
+    MacApplication.emit('application', 'windows-changed', { windowControllers: this.getWindowControllers() });
   }
 
   /** Emits an event to the event bus 
@@ -193,6 +201,7 @@ class MacApplication extends HTMLElement {
           resolve();
         }
       }).then(() => {        
+        appInstance.invokeName = app;
         MacDesktop.appendChild(appInstance);
         MacApplication.#processes.push(new Process(appInstance, app));
         if (!args.background) {
@@ -223,7 +232,6 @@ class MacApplication extends HTMLElement {
 
     const window = windowContainer.cloneNode(true);
     this.appendChild(window);
-    this.#activeWindowController = window;
     return window;
   }
 

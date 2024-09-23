@@ -1,6 +1,6 @@
 class UiIcon extends HTMLElement {
-  #focused; 
-  #open;
+  #focused = false; 
+  #open = false;
   #icon;
 
   constructor() {
@@ -44,12 +44,12 @@ class UiIcon extends HTMLElement {
   }
 
   static get observedAttributes() {
-    return ['icon', 'x', 'y', 'state'];
+    return ['icon', 'x', 'y', 'state', 'open'];
   }
 
   get #state() {
-    if (this.#focused) return 'focused';
     if (this.#open) return 'open';
+    if (this.#focused) return 'focused';
     return 'normal';
   } 
 
@@ -59,8 +59,8 @@ class UiIcon extends HTMLElement {
 
   attributeChangedCallback(name, oldValue, newValue) {
     switch (name) {
-      case 'state':
-        this.#state = newValue || 'normal';
+      case 'open':
+        this.#open = !!newValue;
         break;
       case 'icon':
         this.#icon = newValue;
@@ -79,6 +79,22 @@ class UiIcon extends HTMLElement {
 class UiIcons extends HTMLElement {
   constructor() {
     super();
+  }
+
+  updateState() {
+    this.icons.forEach(icon => {
+      const target = icon.getAttribute('target');
+      const exists = FinderApp.getFileState(target);
+      if (exists) {
+        icon.setAttribute('open', true);
+      } else {
+        icon.removeAttribute('open');
+      }
+    });
+  }
+
+  get icons() {
+    return this.querySelectorAll('ui-icon');
   }
 }
 

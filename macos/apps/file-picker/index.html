@@ -239,55 +239,57 @@
       });
     }
 
-    onAction = (action, event) => {
-      switch (event) {
-        case 'desktop':
-          this.#vdiskExplorer.cd('/Desktop');
-          break;
-        case 'open':
-          this.#vdiskExplorer.cd(this.#targetFolder);
-          const fileOpen = this.#vdiskExplorer.getFile(this.#targetFile);
-          if (fileOpen) {
-              this.dispatchEvent(new CustomEvent('select', { detail: fileOpen }));
-          } else {
-            //this.showDialog('Error: File not found, it may no longer exist.');
-          }
-          this.exit();
-          break;
-        case 'save':
-          this.#vdiskExplorer.cd(this.#targetFolder);
-          if (this.#vdiskExplorer.getFile(this.#targetFile)) {
-            this.showDialog(
-              'Error: File already exists, please choose a different name.', 
-              { actions: { ok: 'Ovewrite', cancel: 'Cancel' }}, 
-              (action) => {
-                if (action === 'ok') {
-                  const fileSave = this.#vdiskExplorer.getFile(this.#targetFile, true);
-                  this.dispatchEvent(new CustomEvent('select', { detail: fileSave }));
-                  this.exit();                
-                } else {
-                  this.#targetFile = null;
-                  // TODO: Fix the underlay bug!
-                  this.exit();
-                }
-            });
-            return;
-          } else {
-            const fileSave = this.#vdiskExplorer.getFile(this.#targetFile, true);
-            this.dispatchEvent(new CustomEvent('select', { detail: fileSave }));
+    onAction = (action, event, data) => {
+      if (action === "menu") {
+        switch (event) {
+          case 'desktop':
+            this.#vdiskExplorer.cd('/Desktop');
+            break;
+          case 'open':
+            this.#vdiskExplorer.cd(this.#targetFolder);
+            const fileOpen = this.#vdiskExplorer.getFile(this.#targetFile);
+            if (fileOpen) {
+                this.dispatchEvent(new CustomEvent('select', { detail: fileOpen }));
+            } else {
+              //this.showDialog('Error: File not found, it may no longer exist.');
+            }
             this.exit();
-          }
-          break;
-        case 'make_folder':
-          this.#vdiskExplorer.mkdir(this.#targetFile);
-          this.syncFs();
-          this.#targetFile = null;
-          this.updateUi();
-          break;
-        case 'cancel':
-          this.exit();
-          break;
-      }
+            break;
+          case 'save':
+            this.#vdiskExplorer.cd(this.#targetFolder);
+            if (this.#vdiskExplorer.getFile(this.#targetFile)) {
+              this.showDialog(
+                'Error: File already exists, please choose a different name.', 
+                { actions: { ok: 'Ovewrite', cancel: 'Cancel' }}, 
+                (action) => {
+                  if (action === 'ok') {
+                    const fileSave = this.#vdiskExplorer.getFile(this.#targetFile, true);
+                    this.dispatchEvent(new CustomEvent('select', { detail: fileSave }));
+                    this.exit();                
+                  } else {
+                    this.#targetFile = null;
+                    // TODO: Fix the underlay bug!
+                    this.exit();
+                  }
+              });
+              return;
+            } else {
+              const fileSave = this.#vdiskExplorer.getFile(this.#targetFile, true);
+              this.dispatchEvent(new CustomEvent('select', { detail: fileSave }));
+              this.exit();
+            }
+            break;
+          case 'make_folder':
+            this.#vdiskExplorer.mkdir(this.#targetFile);
+            this.syncFs();
+            this.#targetFile = null;
+            this.updateUi();
+            break;
+          case 'cancel':
+            this.exit();
+            break;
+        }
+      } 
     }
   }
 

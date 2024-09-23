@@ -19,7 +19,7 @@ export class MacWindow extends HTMLElement {
   #parent = null;
   #screenGlare = null;
   #application;
-  
+ 
   /** 
    * Sets the parent window host
    * This allows the window to communicate with the parent host
@@ -65,6 +65,7 @@ export class MacWindow extends HTMLElement {
     setTimeout(() => {
       this.showOpenAnimation();
     }, 1);
+    this.#application?.notifyWindowsChanged();
   }
 
   onMouseDown = (e) => {
@@ -133,8 +134,7 @@ export class MacWindow extends HTMLElement {
     if (this.isFocused) return true;
     if (this.hasAttribute('no-focus')) return false;
     var topZ = MacWindow.zSortWindows();
-    MacWindow.activeWindow?.blur();
-    MacWindow.activeWindow = this;
+    this.activeWindow?.blur();
     // Set this and children active  
     this.setAttribute('active', '');
     this.#children.forEach(w => w.setAttribute('active', ''));
@@ -188,9 +188,6 @@ export class MacWindow extends HTMLElement {
   blur() {
     this.removeAttribute('active');
     this.#children.forEach(w => w.removeAttribute('active'));
-    if (MacWindow.activeWindow === this) {
-      MacWindow.activeWindow = undefined;
-    }
   }
 
   /** Makes the window modal - which requires that the user
@@ -201,6 +198,7 @@ export class MacWindow extends HTMLElement {
   makeModal = () => {
     this.#modal = true;
     this.#modalUnderlay = document.createElement('mac-window-underlay');
+    this.#application.addWindow(this);
     MacDesktop.appendChild(this.#modalUnderlay);
   }
 
@@ -249,6 +247,7 @@ export class MacWindow extends HTMLElement {
     }
     super.remove();
     this.#application?.focusNext();
+    this.#application?.notifyWindowsChanged();
   }
 
   /** Automatically re-sorts windows' Z-indexes 
@@ -343,12 +342,17 @@ class MacWindowController extends HTMLElement {
     super();
   }
 
-  focus() {
+  focus = () => {
     this.querySelector('mac-window').focus();
   }
 
-  close() {
+  close = () => {
     this.querySelector('mac-window').close();
+    this.onClose?.();
+  }
+
+  get isFocused() {
+    return this.querySelector('mac-window').isFocused;
   }
 }
 
@@ -376,7 +380,7 @@ class ChromeClose extends HTMLElement {
   }
 
   onClick = () => {
-    this.closest('mac-window').close();
+    this.closest('mac-window').parentElement.close();
   }
 }
 

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="30" height="27">
+  <defs>
+    <pattern id="dither" x="0" y="0" width="3" height="3" patternUnits="userSpaceOnUse">
+      <rect width="3" height="3" fill="rgba(255,255,255,0.3)"/>
+      <circle cx="1" cy="1" r="0.5" fill="black"/>
+      <circle cx="2.5" cy="2.5" r="0.5" fill="black"/>
+    </pattern>
+  </defs>
+
+  <g transform="translate(2)">
+    <path d="M5,3 l12,0 l4,4 l0,16 l-16,0 Z" stroke="black" fill="url(#dither)" />
+  </g>
+</svg>
