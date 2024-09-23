@@ -240,7 +240,6 @@ class VDiskExplorer {
     const filename = path.pop();
     const folder =  vdisk.readdir(path.join('/'));
     const file = folder.find(it => it.name === filename);
-    console.error(file);
     folder.splice(folder.indexOf(file), 1);
     vdisk.write();
     this.emitChange();

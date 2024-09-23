@@ -242,7 +242,7 @@ export class MacWindow extends HTMLElement {
    * @returns {void}
    */
   close = () => {
-    document.closest('mac-window-underlay').remove();
+    this.#modalUnderlay?.remove();
     this.#screenGlare.remove();
     if (this.parentNode instanceof MacWindowController) {
       this.parentNode.remove();

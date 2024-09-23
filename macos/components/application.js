@@ -240,6 +240,7 @@ class MacApplication extends HTMLElement {
           </div>
         </mac-window-content>`
     
+    const controller = document.createElement('mac-window-controller');
     const dialog = document.createElement('mac-window');
     dialog.setAttribute('width', '220');
     dialog.setAttribute('height', 'auto');
@@ -247,7 +248,8 @@ class MacApplication extends HTMLElement {
     dialog.classList.add('default-dialog');
     
     dialog.innerHTML = template;
-    MacDesktop.appendChild(dialog);
+    controller.appendChild(dialog);
+    MacDesktop.appendChild(controller);
 
     const content = dialog.querySelector('mac-window-content'); 
     const actions = extra?.actions || { ok: 'OK' };

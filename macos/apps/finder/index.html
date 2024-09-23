@@ -149,7 +149,6 @@ if (typeof FinderApp === 'undefined') {
     }
 
     sendToTrash = () => {
-      console.error('called');
       if (this.#selectedIcon) {
         this.#vdiskExplorer.rm(this.#selectedIcon.getAttribute('target'));
         this.updateDisplay();

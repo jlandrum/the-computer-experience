@@ -1,43 +1,47 @@
 <template>
   <app-file-picker>
     <template window="load-file">
-      <mac-window chromeless modal width="auto" height="auto">
-        <mac-window-content>
-          <ui-dropdown>
-            <ui-dropdown-list>
-            </ui-dropdown-list>
-          </ui-dropdown>
-          <span class="disk">MacintoshHD</span>
-          <ui-list></ui-list>
-          <div class="buttons">
-            <ui-button action="eject" disabled>Eject</ui-button>
-            <ui-button action="desktop">Desktop</ui-button>
-            <hr />
-            <ui-button action="cancel">Cancel</ui-button>
-            <ui-button action="open" primary disabled>Open</ui-button>
-          </div>
-        </mac-window-content>
-      </mac-window>
+      <mac-window-controller>
+        <mac-window chromeless modal width="auto" height="auto">
+          <mac-window-content>
+            <ui-dropdown>
+              <ui-dropdown-list>
+              </ui-dropdown-list>
+            </ui-dropdown>
+            <span class="disk">MacintoshHD</span>
+            <ui-list></ui-list>
+            <div class="buttons">
+              <ui-button action="eject" disabled>Eject</ui-button>
+              <ui-button action="desktop">Desktop</ui-button>
+              <hr />
+              <ui-button action="cancel">Cancel</ui-button>
+              <ui-button action="open" primary disabled>Open</ui-button>
+            </div>
+          </mac-window-content>
+        </mac-window>
+      </mac-window-controller>
     </template>
     <template window="save-file">
-      <mac-window chromeless modal width="auto" height="auto">
-        <mac-window-content>
-          <ui-dropdown>
-            <ui-dropdown-list>
-            </ui-dropdown-list>
-          </ui-dropdown>
-          <input type="text" />
-          <span class="disk">MacintoshHD</span>
-          <ui-list></ui-list>
-          <div class="buttons">
-            <ui-button action="desktop">Desktop</ui-button>
-            <ui-button action="cancel">Cancel</ui-button>
-            <hr />
-            <ui-button action="make_folder" disabled>New Folder</ui-button>
-            <ui-button action="save" primary disabled>Save</ui-button>
-          </div>
-        </mac-window-content>
-      </mac-window>
+      <mac-window-controller>
+        <mac-window chromeless modal width="auto" height="auto">
+          <mac-window-content>
+            <ui-dropdown>
+              <ui-dropdown-list>
+              </ui-dropdown-list>
+            </ui-dropdown>
+            <input type="text" />
+            <span class="disk">MacintoshHD</span>
+            <ui-list></ui-list>
+            <div class="buttons">
+              <ui-button action="desktop">Desktop</ui-button>
+              <ui-button action="cancel">Cancel</ui-button>
+              <hr />
+              <ui-button action="make_folder" disabled>New Folder</ui-button>
+              <ui-button action="save" primary disabled>Save</ui-button>
+            </div>
+          </mac-window-content>
+        </mac-window>
+      </mac-window-controller>
     </template>
     <style>
       app-file-picker {
@@ -261,6 +265,10 @@
                   const fileSave = this.#vdiskExplorer.getFile(this.#targetFile, true);
                   this.dispatchEvent(new CustomEvent('select', { detail: fileSave }));
                   this.exit();                
+                } else {
+                  this.#targetFile = null;
+                  // TODO: Fix the underlay bug!
+                  this.exit();
                 }
             });
             return;
