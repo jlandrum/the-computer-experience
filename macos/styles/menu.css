@@ -68,6 +68,11 @@ menu-item, app-menu-item {
     content: attr(title);
     font-size: 11px;
   }
+
+  &[disabled] {
+    color: var(--shadow-1);
+    pointer-events: none;
+  }
 }
 
 menu-dropdown {
@@ -145,6 +150,11 @@ menu-dropdown-item {
     right: 0;
     translate: 100%;
     top: 0;
+  }
+
+  &[disabled] {
+    color: var(--shadow-1);
+    pointer-events: none;
   }
 }
 

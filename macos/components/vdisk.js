@@ -234,6 +234,19 @@ class VDiskExplorer {
     this.emitChange();
   }
 
+  rm(pathToRm) {
+    const [_, disk, ...path] = pathToRm.split('/').slice(1);
+    const vdisk = disks.find(d => d.name === disk);
+    const filename = path.pop();
+    const folder =  vdisk.readdir(path.join('/'));
+    const file = folder.find(it => it.name === filename);
+    console.error(file);
+    folder.splice(folder.indexOf(file), 1);
+    vdisk.write();
+    this.emitChange();
+    VDiskExplorer.emitChange();
+  }
+
   mkdir(folderName) {
     const [_, disk, ...path] = this.#cwd.split('/').slice(1);
     const vdisk = disks.find(d => d.name === disk);
@@ -307,7 +320,7 @@ class VDiskExplorer {
 }
 
 globalThis.MacintoshHD = new VDisk('Macintosh HD');
-globalThis.Trash = new TrashDisk('Trash');
+// globalThis.Trash = new TrashDisk('Trash');
 
 globalThis.VDiskExplorer = VDiskExplorer;
 globalThis.File = File;

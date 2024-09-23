@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32">
+  <g filter="brightness(0.4)">
+    <rect width="24" height="24" y="4" x="4" rx="2.5" fill="black" />
+    <rect width="23" height="23" y="4.5" x="4.5" rx="2" fill="rgba(120,120,120,0.8)" />
+    <rect width="20" height="16" y="6" x="6" rx="2" fill="rgba(120,190,120,0.8)" />
+    <rect width="8" height="1" y="24" x="8" fill="black" />
+    <rect width="3" height="2" y="23.5" x="10.5" fill="black" />
+    <rect width="1" height="1" y="24" x="18" fill="green" />
+  </g>
+</svg>

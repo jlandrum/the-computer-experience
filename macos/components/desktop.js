@@ -25,13 +25,16 @@ class MacDesktop extends HTMLElement {
   }
 
   onWallpaperClicked = (e) => {
-    if (e.target !== this) return;
-    MacDesktop.focusDesktop();
+    MacDesktop.focusDesktop(e);
   }
 
   /** Focuses the desktop, removing focus from all apps */
   static focusDesktop(e) {
-    MacApplication.focus('finder');
+    // If the target is the desktop, blur all applications
+    if (e.target instanceof UiIcons && e.target.hasAttribute('desktop')) {
+      MacApplication.focus('finder');
+      MacApplication.blurAll();
+    }
   }
 
   static showLoadError(appName) {

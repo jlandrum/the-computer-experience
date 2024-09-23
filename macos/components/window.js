@@ -19,25 +19,14 @@ export class MacWindow extends HTMLElement {
   #parent = null;
   #screenGlare = null;
   #application;
-
-  static #activeWindow = undefined;
-
-  /** Gets the active (focused) window
-   * @returns {MacWindow}
-   */
-  static get activeWindow() { return MacWindow.#activeWindow }
-
-  /** Sets the active (focused) window
-   * @param {MacWindow} window The window to make focused
-   * @returns {void}
-   * */
-  static set activeWindow(window) { MacWindow.#activeWindow = window }
   
-  /** Sets the parent window
-   * @param {MacWindow} window The parent window
+  /** 
+   * Sets the parent window host
+   * This allows the window to communicate with the parent host
+   * Windows themsleves should not be subclassed, but rather
+   * the host should be subclassed with the window as a child.
+   * @param {MacWindowController} window The parent window host
    * @returns {void}
-   * @deprecated Parenting will be removed as windows will automatically be focused based on
-   *             the application stack.
    */
   set parent(window) { this.#parent = window; }
 
@@ -47,13 +36,14 @@ export class MacWindow extends HTMLElement {
 
   connectedCallback() {
     this.#screenGlare = document.createElement('mac-screen-glare');
+    this.#screenGlare.style.width = '0';
+    this.#screenGlare.style.height = '0';
     document.body.appendChild(this.#screenGlare);
     this.classList.add('mac-window');
     this.#menuSegment = this.querySelector('menu-segment');
     this.addEventListener('mousedown', this.onMouseDown);    
     document.addEventListener('mouseup', this.onMouseUp);
     document.addEventListener('mousemove', (e) => this.onMouseMove(e, this));
-    this.querySelector('chrome-close')?.addEventListener?.('click', () => this.remove());
     this.#maxWidth = this.getAttribute('max-width') || this.#maxWidth;
     this.#minWidth = this.getAttribute('min-width') || this.#minWidth;
     this.#maxHeight = this.getAttribute('max-height') || this.#maxHeight;
@@ -208,7 +198,7 @@ export class MacWindow extends HTMLElement {
    * the rest of the desktop.
    * @returns {void}
    */
-  makeModal() {
+  makeModal = () => {
     this.#modal = true;
     this.#modalUnderlay = document.createElement('mac-window-underlay');
     MacDesktop.appendChild(this.#modalUnderlay);
@@ -252,12 +242,13 @@ export class MacWindow extends HTMLElement {
    * @returns {void}
    */
   close = () => {
-    this.#children.forEach(w => w.remove());
-    MacDesktop.focusDesktop();
-    this.#modalUnderlay?.remove();
-    this.#parent?.focus();
+    document.closest('mac-window-underlay').remove();
     this.#screenGlare.remove();
+    if (this.parentNode instanceof MacWindowController) {
+      this.parentNode.remove();
+    }
     super.remove();
+    this.#application?.focusNext();
   }
 
   /** Automatically re-sorts windows' Z-indexes 
@@ -305,12 +296,10 @@ export class MacWindow extends HTMLElement {
       animOverlay.remove();
       this.style.opacity = 1;
     }, 160);
+  }
 
-    // this.style.opacity = 0;
-    // setTimeout(() => {
-    //   this.style.transition = 'opacity 0.5s';
-    //   this.style.opacity = 1;
-    // }, 1);
+  toggleShade() {
+    this.toggleAttribute('shaded');
   }
 }
 
@@ -344,7 +333,63 @@ class MacWindowUnderlay extends HTMLElement {
   }
 }
 
+/**
+ * @class MacWindowController
+ * @extends HTMLElement
+ * A utility class that holds a window and manages some of its behaviors.
+ */
+class MacWindowController extends HTMLElement {
+  constructor() {
+    super();
+  }
+
+  focus() {
+    this.querySelector('mac-window').focus();
+  }
+
+  close() {
+    this.querySelector('mac-window').close();
+  }
+}
+
+class ChromeCollapse extends HTMLElement {
+  constructor() {
+    super();
+  }
+
+  connectedCallback() {
+    this.addEventListener('click', this.onClick);
+  }
+
+  onClick = () => {
+    this.closest('mac-window').toggleShade();
+  }
+}
+
+class ChromeClose extends HTMLElement {
+  constructor() {
+    super();
+  }
+
+  connectedCallback() {
+    this.addEventListener('click', this.onClick);
+  }
+
+  onClick = () => {
+    this.closest('mac-window').close();
+  }
+}
+
 globalThis.MacWindow = MacWindow;
+globalThis.MacWindowUnderlay = MacWindowUnderlay;
+globalThis.MacWindowController = MacWindowController;
+
+globalThis.ChromeCollapse = ChromeCollapse;
+globalThis.ChromeClose = ChromeClose;
 
 customElements.define('mac-window', MacWindow);
 customElements.define('mac-window-underlay', MacWindowUnderlay);
+customElements.define('mac-window-controller', MacWindowController);
+
+customElements.define('chrome-collapse', ChromeCollapse);
+customElements.define('chrome-close', ChromeClose);

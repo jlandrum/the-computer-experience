@@ -1,8 +1,14 @@
 <template>
-  <app-task-man no-focus>
-    <mac-window width="200" height="auto" x="590" y="0" always-on-bottom no-focus>
+  <app-task-man>
+    <menu-segment segment-id="finder">
+      <menu-item title="File">
+        <menu-dropdown>
+          <menu-dropdown-item label="Exit" action="close"></menu-dropdown-item>
+        </menu-dropdown>
+      </menu-item>    
+    </menu-segment>
+    <mac-window width="200" height="auto" x="590" y="0" always-on-bottom>
       <mac-window-chrome>
-        <chrome-close></chrome-close>
         <span>TaskMan</span>
       </mac-window-chrome>
       <mac-window-content>
@@ -56,12 +62,26 @@ ${MacApplication.processes.map(p => p.name).join('\n')}`.trim();
       }
       
       showAbout() {
-        this.showDialog('TaskMan');
+        this.showDialog('TaskMan Task Manager');
       }
 
       get name() { return 'TaskMan' }
+      get icon() { return 'apps/task-man/icon.svg' }
 
       newWindow = () => {}
+
+      onAction = (source, action, detail) => {
+        if (source === 'menu') {
+          switch (action) {
+            case 'close':
+              this.exit();
+              break;
+            case 'about':
+              this.showAbout();
+              break;
+          }
+        }
+      }
     }
 
     customElements.define('app-task-man', TaskMan);

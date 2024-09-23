@@ -3,25 +3,28 @@
     <menu-segment>
       <menu-item title="File">
         <menu-dropdown>
-          <menu-dropdown-item label="New Folder"></menu-dropdown-item>
-          <menu-dropdown-item label="Close"></menu-dropdown-item>
+          <menu-dropdown-item label="New Folder" action="new-folder" disabled></menu-dropdown-item>
+          <menu-dropdown-item label="Close" action="close"></menu-dropdown-item>
           <menu-divider></menu-divider>
-          <menu-dropdown-item label="Get Info"></menu-dropdown-item>
-          <menu-dropdown-item label="Find"></menu-dropdown-item>
+          <menu-dropdown-item label="Get Info" action="get-info" disabled></menu-dropdown-item>
+          <menu-dropdown-item label="Find" action="find" disabled></menu-dropdown-item>
           <menu-divider></menu-divider>
-          <menu-dropdown-item label="Eject"></menu-dropdown-item>
-          <menu-dropdown-item label="Empty Trash"></menu-dropdown-item>
+          <menu-dropdown-item label="Eject" action="eject" disabled></menu-dropdown-item>
+          <menu-dropdown-item label="Move to Trash" action="send-to-trash"></menu-dropdown-item>
+          <menu-dropdown-item label="Empty Trash" action="empty-trash" disabled></menu-dropdown-item>
         </menu-dropdown>
       </menu-item>
-      <menu-item title="Edit"></menu-item>
-      <menu-item title="View"></menu-item>
-      <menu-item title="Special"></menu-item>
-      <menu-item title="Help"></menu-item>
+      <menu-item title="Edit" disabled></menu-item>
+      <menu-item title="View" disabled></menu-item>
+      <menu-item title="Special" disabled></menu-item>
+      <menu-item title="Help" disabled></menu-item>
       <menu-spacer></menu-spacer>
     </menu-segment>
     <ui-icons desktop>
       <ui-icon type="folder" icon="apps/finder/drive" label="MacintoshHD" target="/Desktop/MacintoshHD" x="720" y="50"></ui-icon>
-      <ui-icon type="folder" icon="apps/finder/drive" label="Trash" target="/Desktop/Trash" x="720" y="100"></ui-icon>
+      <ui-icon type="app" icon="apps/finder/file@txt" label="SimpleText" target="simple-text" x="720" y="100"></ui-icon>
+      <ui-icon type="app" icon="apps/task-man/icon" label="TaskMan" target="task-man" x="720" y="150"></ui-icon>
+      <!-- <ui-icon type="folder" icon="apps/finder/drive" label="Trash" target="/Desktop/Trash" x="720" y="100"></ui-icon> -->
     </ui-icons>
     <template window="finder">
       <finder-window>
@@ -64,41 +67,93 @@
 <script>
 if (typeof FinderApp === 'undefined') {
   class FinderApp extends MacApplication {
-    #openWindows = [];
-
     constructor() {
       super();
     }
 
     get name() { return 'Finder' }   
     get icon() { return 'finder/icon.png' }
+
+    newWindow = ({path}) => {
+      const existingWindow = this.getWindowControllers().find(window => window.path === path);
+      if (existingWindow) {
+        existingWindow.focus();
+        return existingWindow;
+      }
+      const window = this.spawnWindowFromTemplate('finder');
+      window.path = path;
+      return window;
+    }
+
     onAction = (source, action, extra) => {
       if (source === 'icon') {
         const type = extra.icon.getAttribute('type');
         if (type === 'folder') {
-          const window = this.spawnWindowFromTemplate('finder');
+          const window = this.newWindow({path: extra.icon.getAttribute('target')});
           window.path = extra.icon.getAttribute('target');
-        } else {          
+        } else if (type === 'app') {
+          MacApplication.spawn(extra.icon.getAttribute('target'));
+        } else {
           const path = extra.icon.getAttribute('target');
           MacApplication.openFile(path);
+        }
+      } else if (source === 'menu') {
+        switch (action) {
+          case 'new-folder':
+            break;
+          case 'close':
+            this.activeWindow?.close?.();
+            break;
+          case 'send-to-trash':
+            this.activeWindow?.sendToTrash?.();
+            break;
+          case 'get-info':
+            break;
+          case 'find':
+            break;
+          case 'eject':
+            break;
+          case 'empty-trash':
+            break;
         }
       }
     }
   }
 
-  class FinderWindow extends HTMLElement {
+  class FinderWindow extends MacWindowController {
     #vdiskExplorer = new VDiskExplorer();
     #path;
     #files;
     #details;
+    #selectedIcon;
 
     constructor() {
       super();
     }
 
     connectedCallback() {
-      this.#details = this.querySelector('[data-id="details"]');      // this.#details.addEventListener('change', this.updateDisplay);
+      this.#details = this.querySelector('[data-id="details"]');
       this.#vdiskExplorer.addEventListener('change', this.updateDisplay);
+      this.addEventListener('click', this.onIconClick);
+    }
+
+    disconnectedCallback() {
+      this.#vdiskExplorer.removeEventListener('change', this.updateDisplay);
+      this.removeEventListener('click', this.onIconClick);
+    }
+
+    onIconClick = (e) => {
+      if (e.target instanceof UiIcon) {
+        this.#selectedIcon = e.target;
+      }
+    }
+
+    sendToTrash = () => {
+      console.error('called');
+      if (this.#selectedIcon) {
+        this.#vdiskExplorer.rm(this.#selectedIcon.getAttribute('target'));
+        this.updateDisplay();
+      }
     }
 
     set path(value) {
@@ -107,7 +162,10 @@ if (typeof FinderApp === 'undefined') {
       this.updateDisplay();
     }
 
+    get path() { return this.#path }
+
     updateDisplay = () => {
+      if (!this.#path) return;
       this.#files = this.#vdiskExplorer.ls();
       this.querySelector('ui-icons').innerHTML = '';
       this.#files.forEach((file, i) => {
@@ -121,7 +179,9 @@ if (typeof FinderApp === 'undefined') {
         icon.setAttribute('y', '40');
         this.querySelector('ui-icons').appendChild(icon);
       });
-      this.#details.textContent = `${this.#files.length} items, ${this.#vdiskExplorer.available} available`;
+      if (this.#details) {
+        this.#details.textContent = `${this.#files.length} items, ${this.#vdiskExplorer.available} available`;
+      }
       this.querySelector('mac-window-chrome span').textContent = this.#path.split('/').reverse()[0];
     }
   }

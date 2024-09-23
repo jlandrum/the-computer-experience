@@ -199,6 +199,13 @@ mac-window {
   &[modal] {
     border-radius: 0;
   }
+
+  &[shaded] {
+    & mac-window-content, &::after {
+      display: none;
+    }
+    height: 12px !important;
+  }
 }
 
 mac-window-drag-overlay {

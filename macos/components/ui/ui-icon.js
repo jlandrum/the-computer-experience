@@ -20,8 +20,11 @@ class UiIcon extends HTMLElement {
     this.removeEventListener('blur', this.onBlur);
   }
 
-  onClick = () => {
-    () => this.dispatchEvent(new CustomEvent('click'));
+  onClick = (e) => {
+    this.parentElement.querySelectorAll('ui-icon').forEach(icon => {
+      icon.blur() ;
+      icon.updateIcon();
+    });
     this.#focused = true;
     this.updateIcon();
   }
@@ -31,6 +34,11 @@ class UiIcon extends HTMLElement {
   }
 
   onBlur = () => {
+    this.#focused = false;
+    this.updateIcon();
+  }
+
+  blur = () => {
     this.#focused = false;
     this.updateIcon();
   }
@@ -68,4 +76,14 @@ class UiIcon extends HTMLElement {
   }
 }
 
+class UiIcons extends HTMLElement {
+  constructor() {
+    super();
+  }
+}
+
+globalThis.UiIcon = UiIcon;
+globalThis.UiIcons = UiIcons;
+
 customElements.define('ui-icon', UiIcon);
+customElements.define('ui-icons', UiIcons);

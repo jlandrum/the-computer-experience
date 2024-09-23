@@ -17,6 +17,7 @@ class MacApplication extends HTMLElement {
 
   #menu;
   #isFocused;
+  #activeWindowController;
 
   constructor() {
     super();
@@ -31,10 +32,13 @@ class MacApplication extends HTMLElement {
   onMouseDown = (e) => {
     // Focus the application
     this.focus();
+    // If the target is a window, set it as the active window
+    if (e.target instanceof MacWindow) {
+      this.#activeWindowController = e.target;
+    }
   }
 
   static focus = (app) => {
-    console.log('Focus', app);
     const application = MacApplication.#processes.find(p => p.name === app || p.invokeName === app)?.application;
     if (application) {
       application.focus();
@@ -43,24 +47,30 @@ class MacApplication extends HTMLElement {
     }
   }
   
-  focus = () => {    
+  focus = () => {        
     // If already focused, return
     if (MacApplication.#activeApplication === this) return;
     
     // Blur active application
     MacApplication.#activeApplication?.blur?.();
 
-    // Focus the application
-    this.#getWindows().some(w => w.focus());
     MacApplication.#activeApplication = this;
     MenuBar.replaceSegment(this.#menu);
     MacApplication.#eventBus.addEventListener('action', this.#onAction);
     this.#isFocused = true;
   }
 
+  /**
+   * Focuses the last window in the stack
+   * @returns {void}
+   */
+  focusNext = () => {
+    this.getWindowControllers().reverse?.()?.[0]?.focus?.();
+  }
+
   blur = () => {
     // Ensure all windows are blurred
-    this.#getWindows().forEach(w => w.blur());
+    this.getWindowControllers().forEach(w => w.blur());
 
     // If not focused, return
     if (MacApplication.#activeApplication !== this) return;
@@ -69,14 +79,13 @@ class MacApplication extends HTMLElement {
     MacApplication.#eventBus.removeEventListener('action', this.#onAction);
     MacApplication.#activeApplication = null;
     this.#isFocused = false;
+    this.#activeWindowController = null;
   }
 
-  #getWindows = function* () {
-    for (const child of this.children) {
-      if (child instanceof MacWindow) {
-        yield child;
-      }
-    }
+  get activeWindow() { return this.#activeWindowController }
+
+  getWindowControllers = () => {
+    return Array.from(this.childNodes).filter(c => c instanceof MacWindowController);
   }
 
   #onAction = (e) => {
@@ -91,7 +100,12 @@ class MacApplication extends HTMLElement {
    * @returns {string} The name of the application */
   get name() { throw new Error('Application MUST provide a name') }
   
-  /** Applications are expected to handle when a new window request is made */
+  /** Applications are expected to handle when a new window request is made 
+   * @abstract
+   * @function
+   * @param {object} args Any arguments passed to the new window
+   * @returns {MacWindowController} The host for the new window
+  */
   newWindow = () => { throw new Error('Application MUST provide a newWindow method') }
 
   /** Applications should handle events from UI events */
@@ -112,7 +126,7 @@ class MacApplication extends HTMLElement {
    */
   exit() {
     // Close all windows
-    this.#getWindows().forEach(w => w.close());
+    this.getWindowControllers().forEach(w => w.close());
     // Remove the script for the process and the process from the list
     const index = MacApplication.#processes.findIndex(p => p.application === this);
     MacApplication.#processes[index].script?.remove();
@@ -134,6 +148,7 @@ class MacApplication extends HTMLElement {
 
   /** Blurs all applications */
   static blurAll = () => {
+    document.querySelectorAll('mac-window').forEach(app => app.blur());
     MacApplication.#processes.forEach(p => p.application.blur());
     this.#activeApplication = null;
   }
@@ -189,7 +204,7 @@ class MacApplication extends HTMLElement {
       })
     }).catch((e) => {
       console.error('Failed to load app', app, e.stack);
-      this.showDialog('Failed to load app: ' + app);
+      this.showDialog(`The application program ${app} could not be opened, because an error of type -39 occured.`);
       throw new Error('Failed to load app');
     });
   }
@@ -199,8 +214,16 @@ class MacApplication extends HTMLElement {
    * @param {string} template The name of the template to spawn
    */
   spawnWindowFromTemplate = (template) => {
-    const window = this.querySelector('template[window="' + template + '"]').content.firstElementChild.cloneNode(true);
+    const windowContainer = this.querySelector('template[window="' + template + '"]').content.firstElementChild;
+    if (!windowContainer) {
+      throw new Error('Template not found: ' + template);
+    } else if (!windowContainer instanceof MacWindowController) {
+      console.warn('Template root should be a class that extends MacWindowController', template);
+    }
+
+    const window = windowContainer.cloneNode(true);
     this.appendChild(window);
+    this.#activeWindowController = window;
     return window;
   }
 
