@@ -1,0 +1,168 @@
+<template>
+  <app-simple-text>
+    <menu-segment segment-id="finder">
+      <menu-item title="File">
+        <menu-dropdown>
+          <menu-dropdown-item label="Save" action="save"></menu-dropdown-item>
+          <menu-dropdown-item label="Open..." action="open"></menu-dropdown-item>
+          <menu-divider></menu-divider>
+          <menu-dropdown-item label="Save As..." action="save_as"></menu-dropdown-item>
+          <menu-divider></menu-divider>
+        </menu-dropdown>
+      </menu-item>
+      <menu-item title="Edit"></menu-item>
+      <menu-item title="Help"></menu-item>
+      <menu-spacer></menu-spacer>
+    </menu-segment>
+    <template window="editor">
+      <editor-window>
+        <mac-window resizable multiwin>
+          <mac-window-chrome>
+            <chrome-close></chrome-close>
+            <span>Untitled</span>
+            <chrome-shrink></chrome-shrink>
+            <chrome-collapse></chrome-collapse>
+          </mac-window-chrome>
+          <mac-window-content>
+            <ui-frame shallow>
+              <ui-horizontal-scroller target="textarea"></ui-horizontal-scroller>
+              <ui-vertical-scroller target="textarea"></ui-vertical-scroller>
+              <textarea autocorrect="false" spellcheck="false"></textarea>
+            </ui-frame>
+          </mac-window-content>
+        </mac-window>
+      </editor-window>
+    </template>
+    <style>
+      app-simple-text {
+        & textarea {
+          width: 100%;
+          height: 100%;
+          border: none;
+          color: var(--text);
+          font-size: 11px;
+          padding: 8px;
+          resize: none;
+          outline: none;
+          overflow: auto;
+          box-sizing: border-box;
+        }
+      }
+    </style>
+  </app-simple-text>
+</template>
+
+<script>
+  if (typeof SimpleText === 'undefined') {
+    class SimpleText extends MacApplication {
+      #activeWindow;
+
+      constructor() {
+        super();
+      }
+
+      connectedCallback() {
+        super.connectedCallback();
+        this.addEventListener('about', this.showAbout);
+      }
+      
+      get name() { return 'SimpleText' }
+
+      get icon() { return 'apps/simple-text/icon.png' }
+
+      set activeWindow(window) {
+        this.#activeWindow = window;
+      }
+
+      onAction = (source, action, detail) => {
+        if (source === 'menu') {
+          switch (action) {
+            case 'about':
+              this.showDialog('SimpleText');
+              break;
+            case 'new':
+              this.newWindow();
+              break;
+            case 'open':
+              MacApplication.spawn('file-picker', { type: 'load-file' })
+                .then(filePicker => {
+                  filePicker.addEventListener('select', (e) => {
+                    const file = e.detail;
+                    if (file instanceof File) {
+                      this.#activeWindow.openFile(file);
+                    } else {
+                      this.showDialog('Error: Cannot open folders as text');
+                    }
+                  });
+              });
+              break;
+            case 'save':
+              if (this.#activeWindow.activeFile) {
+                this.#activeWindow.activeFile.write(this.#activeWindow.text);
+              } else {
+                this.showDialog('Error: No file to save');
+              }
+              break;
+            case 'save_as':
+            MacApplication.spawn('file-picker', { type: 'save-file', file: this.#activeWindow.activeFile })
+                .then(filePicker => {
+                  filePicker.addEventListener('select', (e) => {
+                    const file = e.detail;
+                    if (file instanceof File) {
+                      file.write(this.#activeWindow.text);
+                      this.#activeWindow.openFile(file);
+                    } else {
+                      this.showDialog('Error: Cannot save folders as text');
+                    }
+                  });
+              });
+              break;
+          }        
+        }
+      }
+
+      newWindow = (args) => {
+        const window = this.spawnWindowFromTemplate('editor');
+        this.#activeWindow = window;
+
+        if (args.file) {
+          const explorer = new VDiskExplorer();
+          const file = explorer.getFile(args.file);
+          if (file) {
+            this.#activeWindow.openFile(file);
+          } 
+        }
+      }
+    }
+
+    class EditorWindow extends HTMLElement {
+      #activeFile;
+
+      constructor() {
+        super();
+        this.addEventListener('mousedown', (e) => {
+          e.target.closest('app-simple-text').activeWindow = this;
+        });
+      }
+
+      openFile(file) {
+        this.#activeFile = file;
+        this.querySelector('textarea').value = file.read();
+        this.querySelector('span').textContent = file.name;
+      }
+
+      connectedCallback() {}
+
+      get activeFile() {
+        return this.#activeFile;
+      }
+
+      get text() {
+        return this.querySelector('textarea').value;
+      }
+    }
+
+    customElements.define('editor-window', EditorWindow);
+    customElements.define('app-simple-text', SimpleText);
+  }
+</script>

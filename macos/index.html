@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="styles.css">
+    <script src="components/index.js" type="module"></script>
+    <title>
+      MacOS: The Computer Experience
+    </title>
+  </head>
+  <body>
+    <mac-desktop>
+      <menu-bar>
+        <menu-item icon="apple">
+          <menu-dropdown>
+            <menu-dropdown-item label="About This Computer" id="menu-about"></menu-dropdown-item>
+            <menu-divider></menu-divider>
+            <menu-dropdown-item label="Apple System Profiler" target="apple-system-profiler"></menu-dropdown-item>
+            <menu-dropdown-item label="Calculator" target="calculator"></menu-dropdown-item>
+            <menu-dropdown-item label="Chooser" target="chooser"></menu-dropdown-item>
+            <menu-dropdown-item label="Control Panels" target="control-panels"></menu-dropdown-item>
+            <menu-dropdown-item label="Favorites"></menu-dropdown-item>
+            <menu-dropdown-item label="Key Caps"></menu-dropdown-item>
+            <menu-dropdown-item label="Network Browser"></menu-dropdown-item>
+            <menu-dropdown-item label="Recent Applications">
+              <menu-dropdown>
+                <menu-dropdown-item label="SimpleText" target="simple-text"></menu-dropdown-item>
+              </menu-dropdown>
+            </menu-dropdown-item>
+            <menu-dropdown-item label="Recent Documents"></menu-dropdown-item>
+            <menu-dropdown-item label="Remote Access Status"></menu-dropdown-item>
+            <menu-dropdown-item label="Scrapbook"></menu-dropdown-item>
+            <menu-dropdown-item label="Sherlock 2"></menu-dropdown-item>
+            <menu-dropdown-item label="Stickies"></menu-dropdown-item>
+          </menu-dropdown>
+        </menu-item>
+        <menu-segment id="finder-segment">          
+        </menu-segment>
+        <menu-clock>4:21 AM</menu-clock>
+        <menu-vdivider></menu-vdivider>
+        <app-menu-item title="Application" id="app-menu"></app-menu-item>
+      </menu-bar>
+
+      <template id="load-error">
+        <mac-window>
+          <mac-window-chrome titleless></mac-window-chrome>
+          <mac-window-content>
+            <div>
+              The application program "<span class="app-name">APP</span>" <br/>
+              could not be opened, because an error of<br/>
+              type -39 occured.
+            </div>
+            <mac-button right>OK</mac-button>
+          </mac-window-content>
+          <script>
+            document.currentScript.parentElement
+              .querySelector('mac-button').addEventListener('click', (e) => e.target.parentElement.parentElement.remove());
+          </script>
+        </mac-window>
+      </template>      
+      
+    </mac-desktop>
+    <script defer>
+      setTimeout(() => {
+        MacApplication.spawn('finder', { background: true });
+        // MacApplication.spawn('task-man'); 
+        // MacApplication.spawn('simple-text');
+        setTimeout(() => {
+          // MacApplication.emit('menu', 'open');
+        }, 100);
+      }, 500);
+    </script> 
+  </body>
+</html>

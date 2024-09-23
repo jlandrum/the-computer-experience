@@ -1,0 +1,226 @@
+mac-window {
+  --fg-color: rgba(0,0,0,1);
+
+  &:not([ready]) {
+    opacity: 0;
+  }
+
+  display: inline-flex;
+  flex-direction: column;
+  background-color: var(--chrome);
+  border: 1px solid black;
+  border-radius: 2px;
+  padding: 4px;
+  filter: drop-shadow(1px 1px 0px black);
+  position: absolute;
+  z-index: 100;
+
+  &:not([active]) {
+    --fg-color: rgba(0,0,0,0.5);
+    & chrome-close, & chrome-shrink, & chrome-collapse {
+      opacity: 0;
+      pointer-events: none;
+    }
+    & mac-window-chrome span {
+      &::before, &::after {
+        opacity: 0;
+      }
+    }
+    & mac-window-chrome[black] {
+      background-color: white;
+      & span {
+        color: black;
+      }
+    }
+    & mac-window-chrome[titleless] {
+      &::before {
+        opacity: 0;
+      }
+    }
+  }
+
+  & mac-window-chrome {
+    align-items: center;
+    gap: 4px;
+    display: flex;
+    flex-direction: row;
+    pointer-events: none;
+    span {
+      display: flex;
+      flex-direction: row;
+      flex-grow: 1;
+      gap: 5px;
+      font-weight: 600;
+      font-size: 11px;
+      color: var(--fg-color);
+      &::before, &::after {
+        border-left: 1px solid rgba(255,255,255,0.8);
+        border-right: 1px solid var(--shadow-1);
+        flex-grow: 1;
+        content: '.';
+        color: transparent;
+        display: block;
+        background: url('../images/drag.png');
+        border-radius: 2px;
+        background-size: 4px 2px;
+        height: 11px;
+        border-bottom: 1px solid var(--grip-2)
+      }
+    }
+    & chrome-close, & chrome-shrink, & chrome-collapse {
+      pointer-events: all;
+      display: block;
+      width: 9px;
+      height: 9px;
+      border: 1.5px solid var(--fg-color);
+      background: linear-gradient(to top left, rgb(245, 245, 245), rgb(137, 137, 137));
+      filter: drop-shadow(-1px -1px 1px var(--shadow-1)) drop-shadow(1px 1px 1px var(--highlight));
+      position: relative;
+      &::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-left: 1px solid rgba(255,255,255,0.6);
+        border-right: 1px solid rgba(255,255,255,0.6);
+        border-top: 1px solid var(--highlight);
+        border-bottom: 1px solid var(--shadow-1);
+        filter: blur(0.2px);
+      }
+      &:active {
+        filter: brightness(0.7);
+      }
+    }
+    & chrome-shrink::before {
+      content: '';
+      position: absolute;
+      top: 3px;
+      left: 0px;
+      width: 9px;
+      height: 1px;
+      background-color: var(--shadow-2);
+      z-index: 1;
+    }
+    & chrome-collapse::before {
+      content: '';
+      position: absolute;
+      top: 3px;
+      left: 0px;
+      width: 9px;
+      height: 3px;
+      border-top: 1px solid var(--shadow-2);
+      border-bottom: 1px solid var(--shadow-2);
+      box-sizing: border-box;
+      z-index: 1;
+    }
+
+    &[titleless] {
+      &::before {
+        height: 9px;
+        border-left: 1px solid var(--highlight);
+        border-right: 1px solid var(--shadow-1);
+        flex-grow: 1;
+        content: '.';
+        color: transparent;
+        display: block;
+        background: linear-gradient(to bottom, var(--highlight), var(--shadow-1));
+        background-size: 4px 2px;
+      }
+      border-bottom: 1px solid var(--fg-color);
+      margin: -4px -4px 0 -4px;
+      padding: 3px;
+      filter: drop-shadow(0px 1px 0px var(--shadow-1));
+    }
+
+    &[black] {
+      margin: -4px;
+      padding: 4px;
+      background: black;
+      border: 1px solid black;
+      & span {
+        color: white;
+        &::before, &::after {
+          display: none;
+        }
+      }
+      & chrome-close, & chrome-shrink, & chrome-collapse {
+        &::after { display: none; }
+        filter: none;
+        background: none;
+        border-color: white;
+        border-width: 1px;
+      }
+    }
+  }
+
+  & mac-window-content {
+    margin-top: 2px;
+    border-radius: 1px;
+    font-size: 11px;
+    flex-direction: column;
+    color: var(--fg-color);
+    display: flex;
+    flex-grow: 1;
+
+    & p {
+      margin: 2px 0;
+    }
+
+    & *[right] {
+      align-self: flex-end;
+    }
+  }
+
+  &[resizable]::after {
+    content: '';
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    bottom: 4px;
+    right: 4px;
+    background-color: var(--chrome);
+    border-left: 1px solid var(--fg-color);
+    border-top: 1px solid var(--fg-color);
+    box-shadow: inset 1px 1px 0px white;
+    overflow: hidden;
+    background-image: url('../images/drag-handle.svg');
+    background-size: 12px;
+    background-repeat: no-repeat;
+    background-position: center;
+  }
+
+  & menu-segment {
+    display: none;
+  }
+
+  &[chromeless] {
+    box-shadow: inset 1px 1px 0px white, inset -1px -1px 0px var(--shadow-1);
+  }
+
+  &[modal] {
+    border-radius: 0;
+  }
+}
+
+mac-window-drag-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1000;
+  border: 2px solid var(--shadow-1);
+  box-sizing: border-box;
+}
+
+mac-window-underlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1000;
+  /* background-color: rgba(0,0,0,0.5); */
+}
+
+mac-screen-glare {
+  display: block;
+  position: absolute;  
+  inset: 0;
+  background-color: white;
+  z-index: -1000;
+  filter: blur(100px);
+}

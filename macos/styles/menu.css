@@ -1,0 +1,177 @@
+menu-bar {
+  background-color: var(--chrome);
+  display: flex;
+  width: 100%;
+  height: 19px;
+  position: relative;
+  border-radius: 8px 8px 0 0;
+  border-bottom: 1px solid var(--shadow-2);
+  filter: drop-shadow(0 1px 0px black);
+  padding: 0 8px;
+  box-sizing: border-box;
+  align-items: center;
+  z-index: 1000;
+  &::after {
+    content: '';
+    border-radius: 8px 8px 0 0;
+    pointer-events: none;
+    position: absolute;
+    border: 1px solid var(--highlight);
+    border-bottom: none;
+    inset: 0;
+    z-index: -1;;
+  }
+  & menu-segment {
+    display: contents;
+  }
+}
+
+menu-item, app-menu-item {
+  height: 100%;
+  background-color: var(--highlight-1);
+  display: flex;
+  align-items: center;
+  font-weight: 600;
+  font-family: sans-serif;
+  padding: 0 7px;
+  position: relative;
+  color: black;
+  & menu-dropdown {
+    display: none;
+  }
+  &[open] {
+    background-color: var(--selection);
+    &::after {
+      color: white;
+    }
+    & menu-dropdown {
+      display: block;
+    }
+  }
+  &[icon] {
+    background-image: var(--icon);
+    image-rendering: pixelated;
+    background-size: 16px 15px;
+    background-position: 0 center;
+    background-repeat: no-repeat;
+    padding: 0 8px 0 20px;
+  }
+  &[icon="apple"] {
+    background-image: url('../images/apple-icon.png');
+    image-rendering: pixelated;
+    background-size: 12px 15px;
+    background-position: center;
+    padding: 0 16px;
+  }
+
+  &::after {
+    content: attr(title);
+    font-size: 11px;
+  }
+}
+
+menu-dropdown {
+  position: absolute;
+  border: 1px solid black;
+  background-color: var(--chrome);
+  left: 0;
+  top: 20px;
+  display: flex;
+  flex-direction: column;
+  font-size: 11px;
+  z-index: 1000;
+
+  & menu-dropdown {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  &::after {
+    content: '';
+    inset: 0;
+    position: absolute;
+    border-top: 1px solid var(--highlight);
+    border-left: 1px solid var(--highlight);
+    border-right: 1px solid var(--shadow-1);
+    border-bottom: 1px solid var(--shadow-1);
+    pointer-events: none;
+  }
+}
+
+menu-dropdown-item {
+  width: 100%;
+  display: flex;
+  padding: 1px 0;
+  position: relative;
+  &::before {
+    content: attr(label);
+    font-size: 11px;
+    padding: 0 18px;    
+    white-space: nowrap;
+    pointer-events: none;;
+  }
+  &:hover {
+    &::before {
+      color: white;
+    }
+    & menu-dropdown {
+      opacity: 1;
+      pointer-events: all;
+    }
+    background-color: var(--selection);
+  }
+  &.blink {
+    color: black;
+    background-color: var(--chrome);
+  }
+
+  &:has(menu-dropdown) {
+    &::after {
+      content: '>';
+    }
+  }
+
+  &[icon] {
+    &::before {
+      background-image: var(--icon);
+      background-size: 12px 12px;
+      background-position: 16px center;
+      background-repeat: no-repeat;
+      padding-left: 34px;
+    }
+  }
+
+  & menu-dropdown {
+    right: 0;
+    translate: 100%;
+    top: 0;
+  }
+}
+
+menu-divider {
+  border-top: 1px solid var(--shadow-1);
+  border-bottom: 1px solid var(--highlight);
+  width: 100%;
+  height: 0;
+  display: block;
+  margin: 2px 0;
+}
+
+menu-segment {
+  display: none;
+}
+
+menu-clock {
+  margin-left: auto;
+  font-size: 11px;
+}
+
+menu-vdivider {
+  width: 4px;
+  height: 100%;
+  background-color: var(--shadow-1);
+  margin: 8px;
+  border-left: 1px solid white;
+  border-right: 1px solid var(--shadow-1);
+  background: url('../images/menudivider.svg') center no-repeat;
+}

@@ -1,0 +1,201 @@
+<template>
+  <app-calculator>
+    <menu-segment></menu-segment>
+    <mac-window  width="120" height="155" title="Calculator">
+      <mac-window-chrome black>
+        <chrome-close></chrome-close>
+        <span>Calculator</span>
+      </mac-window-chrome>
+      <mac-window-content>
+        <div class="input">0</div>
+        <calc-grid>
+          <button>C</button>
+          <button>=</button>
+          <button>/</button>
+          <button>*</button>
+          <button>7</button>
+          <button>8</button>
+          <button>9</button>
+          <button>-</button>
+          <button>4</button>
+          <button>5</button>
+          <button>6</button>
+          <button>+</button>
+          <button>1</button>
+          <button>2</button>
+          <button>3</button>
+          <button style="grid-row: span 2">=</button>
+          <button style="grid-column: span 2;">0</button>
+          <button>.</button>      
+        </calc-grid>
+      </mac-window-content>
+      <style>
+        app-calculator mac-window {
+          border-radius: 10px !important;
+          background-color: black !important;
+          overflow: hidden;
+  
+          & mac-window-chrome {
+            border-radius: 10px 10px 0 0;
+            border: none !important;
+            padding: 4px !important;
+          }
+  
+          & mac-window-content {
+            padding: 8px;
+            margin: 4px -4px -4px -4px;
+            border-radius: 4px;
+            background-color: var(--chrome);
+          }
+          & calc-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-gap: 4px;
+          }
+          & button {
+            min-width: 20px;
+            min-height: 16px;
+            padding: 2px;
+            font-size: 9px;
+            border: 1px solid black;
+            filter: drop-shadow(2px 2px 0px black);
+            &:active, &.active {
+              background-color: black;
+              color: white;
+            }
+          }
+          & .input {
+            width: 100%;
+            border: 1px solid black;
+            background-color: white;
+            font-size: 9px;
+            margin: 0 0 6px 0;
+            padding: 4px;
+            text-align: end;
+            box-sizing: border-box;
+          }
+        }
+      </style>
+    </mac-window>
+  </app-calculator>
+</template>
+
+<script>
+  class CalculatorApp extends MacApplication {
+    #value = '';
+    #operand = '';
+    #collector = '';
+    #displayInput = false;
+
+    get name () { return 'Calculator' }
+
+    newWindow = () => {}
+
+    get value() { 
+      return this.#value || '0';
+    }
+
+    get displayValue() {
+      const displayVal = ((this.#displayInput ? this.#value || this.#collector : this.#collector || this.#value) || '0');
+      return displayVal.length > 15 ? displayVal.slice(0, 15) : displayVal;
+    }
+
+    set value(v) {
+      this.#value = v;
+      this.querySelector('.input').textContent = this.displayValue;
+    }
+
+    constructor() {
+      super();
+    }
+
+    connectedCallback() {
+      super.connectedCallback();
+
+      this.querySelector('calc-grid').addEventListener('click', (e) => {
+        if (e.target.tagName === 'BUTTON') {
+          this.handleButton(e.target.textContent);
+        }
+      });
+
+      document.addEventListener('keydown', this.handleKeyPress);
+    }
+
+    disconnectedCallback() {
+      document.removeEventListener('keydown', this.handleKeyPress);
+    }
+
+    handleKeyPress = (e) => {
+      if (!this.isFocused) { return }
+      this.handleButton(e.key);
+      // Go through all buttons and set the active class if inner text matches the key
+      this.querySelectorAll('button').forEach((button) => {
+        if (button.textContent === e.key) {
+          button.classList.add('active');
+          setTimeout(() => button.classList.remove('active'), 100);
+        }
+      });
+    }
+
+    handleButton(action) {
+      switch (action) {
+        case 'c':
+        case 'C':
+          this.#value = '';
+          this.#collector = '';
+          this.#operand = '';
+          break;
+        case '+':
+        case '-':
+        case '*':
+        case '/':
+          this.#collector = this.#collector || this.#value;
+          this.#value = '';
+          this.#operand = action;
+          break;
+        case 'Enter':
+        case '=':
+          this.#displayInput = false;
+          this.calculate();
+          break;
+        default:
+          if (/[0-9\.]/.test(action)) {
+            if (action === '.' && this.#value.includes('.')) { return }
+            this.#displayInput = true;
+            this.value = `${this.value}${action}`;
+          }
+          break;
+      }
+      this.sanitizeValue();
+    }
+
+    calculate() {
+      if (this.#value === '') {
+        this.#value = this.#collector;
+      }
+      switch (this.#operand) {
+        case '+':
+          this.#collector = parseFloat(this.#collector) + parseFloat(this.#value || this.#collector);
+          break;
+        case '-':
+          this.#collector = parseFloat(this.#collector) - parseFloat(this.#value || this.#collector);
+          break;
+        case '*':
+          this.#collector = parseFloat(this.#collector) * parseFloat(this.#value || this.#collector);
+          break;
+        case '/':
+          this.#collector = parseFloat(this.#collector) / parseFloat(this.#value || this.#collector);
+          break;
+        default:
+          break;
+      }
+    }
+
+    sanitizeValue() {
+      // Remove leading zeros
+      this.value = this.value.toString().replace(/^0+/, '');      
+    }
+  }
+
+  customElements.define('app-calculator', CalculatorApp);
+</script>

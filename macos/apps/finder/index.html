@@ -1,0 +1,132 @@
+<template>
+  <finder-app>
+    <menu-segment>
+      <menu-item title="File">
+        <menu-dropdown>
+          <menu-dropdown-item label="New Folder"></menu-dropdown-item>
+          <menu-dropdown-item label="Close"></menu-dropdown-item>
+          <menu-divider></menu-divider>
+          <menu-dropdown-item label="Get Info"></menu-dropdown-item>
+          <menu-dropdown-item label="Find"></menu-dropdown-item>
+          <menu-divider></menu-divider>
+          <menu-dropdown-item label="Eject"></menu-dropdown-item>
+          <menu-dropdown-item label="Empty Trash"></menu-dropdown-item>
+        </menu-dropdown>
+      </menu-item>
+      <menu-item title="Edit"></menu-item>
+      <menu-item title="View"></menu-item>
+      <menu-item title="Special"></menu-item>
+      <menu-item title="Help"></menu-item>
+      <menu-spacer></menu-spacer>
+    </menu-segment>
+    <ui-icons desktop>
+      <ui-icon type="folder" icon="apps/finder/drive" label="MacintoshHD" target="/Desktop/MacintoshHD" x="720" y="50"></ui-icon>
+      <ui-icon type="folder" icon="apps/finder/drive" label="Trash" target="/Desktop/Trash" x="720" y="100"></ui-icon>
+    </ui-icons>
+    <template window="finder">
+      <finder-window>
+        <mac-window resizable>
+          <mac-window-chrome>
+            <chrome-close></chrome-close>
+            <span>Untitled</span>
+            <chrome-shrink></chrome-shrink>
+            <chrome-collapse></chrome-collapse>
+          </mac-window-chrome>
+          <mac-window-content>
+            <ui-frame inset white nopad>
+              <ui-frame nested center data-id="details">
+                0 items, 0 MB available
+              </ui-frame>
+              <ui-icons></ui-icons>
+            </ui-frame>
+          </mac-window-content>  
+        </mac-window>
+      </finder-window>
+    </template>
+    <style>
+      finder-app {
+        & > ui-icons {
+          background: url('./images/wallpaper.png');
+          position: absolute;
+          inset: 0;
+          background-color: var(--background);
+          background-size: 18%;
+          padding-top: 22px;
+          & ui-icon::after {
+            background-color: rgb(200,200,200);
+          }
+        }
+      }
+    </style>
+  </finder-app>
+</template>
+
+<script>
+if (typeof FinderApp === 'undefined') {
+  class FinderApp extends MacApplication {
+    #openWindows = [];
+
+    constructor() {
+      super();
+    }
+
+    get name() { return 'Finder' }   
+    get icon() { return 'finder/icon.png' }
+    onAction = (source, action, extra) => {
+      if (source === 'icon') {
+        const type = extra.icon.getAttribute('type');
+        if (type === 'folder') {
+          const window = this.spawnWindowFromTemplate('finder');
+          window.path = extra.icon.getAttribute('target');
+        } else {          
+          const path = extra.icon.getAttribute('target');
+          MacApplication.openFile(path);
+        }
+      }
+    }
+  }
+
+  class FinderWindow extends HTMLElement {
+    #vdiskExplorer = new VDiskExplorer();
+    #path;
+    #files;
+    #details;
+
+    constructor() {
+      super();
+    }
+
+    connectedCallback() {
+      this.#details = this.querySelector('[data-id="details"]');      // this.#details.addEventListener('change', this.updateDisplay);
+      this.#vdiskExplorer.addEventListener('change', this.updateDisplay);
+    }
+
+    set path(value) {
+      this.#vdiskExplorer.cd(value);
+      this.#path = value;
+      this.updateDisplay();
+    }
+
+    updateDisplay = () => {
+      this.#files = this.#vdiskExplorer.ls();
+      this.querySelector('ui-icons').innerHTML = '';
+      this.#files.forEach((file, i) => {
+        const icon = document.createElement('ui-icon');
+        const ext = (file.name.split('/').reverse()[0].split('.')?.[1] || 'txt');
+        icon.setAttribute('icon', file instanceof Folder ? 'apps/finder/folder' : `apps/finder/file@${ext}`);
+        icon.setAttribute('label', file.name);
+        icon.setAttribute('target', this.#path + '/' + file.name);
+        icon.setAttribute('type', file instanceof Folder ? 'folder' : 'file');
+        icon.setAttribute('x', `${i * 60 + 32}`);
+        icon.setAttribute('y', '40');
+        this.querySelector('ui-icons').appendChild(icon);
+      });
+      this.#details.textContent = `${this.#files.length} items, ${this.#vdiskExplorer.available} available`;
+      this.querySelector('mac-window-chrome span').textContent = this.#path.split('/').reverse()[0];
+    }
+  }
+
+  customElements.define('finder-app', FinderApp);
+  customElements.define('finder-window', FinderWindow);
+}
+</script>

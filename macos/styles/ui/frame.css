@@ -1,0 +1,29 @@
+ui-frame {
+  display: inline-flex;
+  flex-direction: column;
+  flex-grow: 1;
+  border: 1.5px solid var(--fg-color);
+  padding: 4px;
+  background-color: var(--chrome);
+  border-radius: 1px;
+  box-shadow: inset 1px 1px 0px white;
+  overflow: auto;
+  &[shallow] {
+    padding: 0;
+  }
+  &[white] {
+    box-shadow: 1px 1px 0px var(--shadow-3) inset;
+    background-color: white;
+    filter: drop-shadow(1px 1px 0px white);
+  }
+  &[nopad] {
+    padding: 0;
+  }
+  &[nested] {
+    margin: -1px;
+  }
+  &[center] {
+    justify-content: center;
+    align-items: center;
+  }
+}

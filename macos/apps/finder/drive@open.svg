@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32">
+  <defs>
+    <pattern id="dither" x="0" y="0" width="3" height="3" patternUnits="userSpaceOnUse">
+      <rect width="3" height="3" fill="rgba(255,255,255,0.3)"/>
+      <circle cx="1" cy="1" r="0.5" fill="black"/>
+      <circle cx="2.5" cy="2.5" r="0.5" fill="black"/>
+    </pattern>
+  </defs>
+  <rect width="32" height="8" y="20" rx="2" stroke="black" stroke-width="1px" fill="url(#dither)" />
+</svg>

@@ -1,0 +1,17 @@
+mac-desktop {
+  display: block;
+  border-radius: 8px;
+  overflow: hidden;
+  height: 600px;
+  width: 800px;
+  margin: auto;
+  background-color: rgb(98, 100, 150);
+  filter: drop-shadow(0 0 20px black) drop-shadow(0 0 120px var(--background));
+  /* scale: 200%; */
+  /* scale: ;
+  translate: 50% 50%; */
+  &.busy * {
+    pointer-events: none !important;
+    cursor: wait;
+  }
+}

@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="30" height="27">
+  <g transform="translate(2)">
+    <path d="M5,3 l12,0 l4,4 l0,16 l-16,0 Z" stroke="black" fill="rgb(100,100,100)" />
+    <path d="M16.5,3 l0,4 l4,0" stroke="black" fill="rgb(60,60,60)" />
+
+    <line x1="8" y1="9.5" x2="10" y2="9.5" stroke="black" />
+    <line x1="10.5" y1="9.5" x2="12.5" y2="9.5" stroke="black" />
+    <line x1="13" y1="9.5" x2="15" y2="9.5" stroke="black" />
+    <line x1="15.5" y1="9.5" x2="17" y2="9.5" stroke="black" />
+    <line x1="17.5" y1="9.5" x2="19" y2="9.5" stroke="black" />
+
+    <line x1="8" y1="11.5" x2="10" y2="11.5" stroke="black" />
+    <line x1="10.5" y1="11.5" x2="13" y2="11.5" stroke="black" />
+    <line x1="13.5" y1="11.5" x2="16.25" y2="11.5" stroke="black" />
+    <line x1="17" y1="11.5" x2="19" y2="11.5" stroke="black" />
+
+    <line x1="8" y1="13.5" x2="9.5" y2="13.5" stroke="black" />
+    <line x1="10" y1="13.5" x2="14.5" y2="13.5" stroke="black" />
+    <line x1="15" y1="13.5" x2="16.75" y2="13.5" stroke="black" />
+    <line x1="17.5" y1="13.5" x2="19" y2="13.5" stroke="black" />
+  </g>
+</svg>

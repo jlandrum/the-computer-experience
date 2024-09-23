@@ -1,0 +1,50 @@
+/* Given fonts like System Charcoal SFNSDisplay-Black generate CSS to load these fonts as "Charcoal" */
+/* This is a generated file. Do not edit. */
+@font-face {
+  font-family: "Charcoal";
+  src: url("./System Charcoal SFNSDisplay-Black.ttf");
+  font-weight: 800;
+  font-style: normal;
+}
+@font-face {
+  font-family: "Charcoal";
+  src: url("./System Charcoal SFNSDisplay-Bold.ttf");
+  font-weight: 700;
+  font-style: normal;
+}
+@font-face {
+  font-family: "Charcoal";
+  src: url("./System Charcoal SFNSDisplay-Heavy.ttf");
+  font-weight: 600;
+  font-style: normal;
+}
+@font-face {
+  font-family: "Charcoal";
+  src: url("./System Charcoal SFNSDisplay-Medium.ttf");
+  font-weight: 500;
+  font-style: normal;
+}
+@font-face {
+  font-family: "Charcoal";
+  src: url("./System Charcoal SFNSDisplay-Regular.ttf");
+  font-weight: 400;
+  font-style: normal;
+}
+@font-face {
+  font-family: "Charcoal";
+  src: url("./System Charcoal SFNSDisplay-Light.ttf");
+  font-weight: 300;
+  font-style: normal;
+}
+@font-face {
+  font-family: "Charcoal";
+  src: url("./System Charcoal SFNSDisplay-Thin.ttf");
+  font-weight: 200;
+  font-style: normal;
+}
+@font-face {
+  font-family: "Charcoal";
+  src: url("./System Charcoal SFNSDisplay-Ultralight.ttf");
+  font-weight: 100;
+  font-style: normal;
+}

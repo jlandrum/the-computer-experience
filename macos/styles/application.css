@@ -1,0 +1,16 @@
+.mac-application {
+  
+}
+
+.default-dialog {
+  & mac-window-content {
+    display: flex;
+    flex-direction: column;
+    align-items: end;
+    gap: 3px;
+    & *:first-child {
+      padding: 4px;
+      align-self: flex-start;
+    }
+  }
+}

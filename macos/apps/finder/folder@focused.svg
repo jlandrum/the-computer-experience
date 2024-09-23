@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="30" height="27">
+  <!-- <rect width="100%" height="100%" fill="rgb(131, 130, 224)" /> -->
+  <style>
+    :root {
+      --stroke: rgb(56, 56, 106);
+    }
+  </style>
+  <defs>
+    <filter id="blurFilter" x="0" y="0">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="0.2" />
+    </filter>
+    <linearGradient id="grad1" x1="100%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" style="stop-color:rgb(158, 158, 238);stop-opacity:1" />
+      <stop offset="100%" style="stop-color:rgb(204, 204, 251);stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <g filter="url(#blurFilter) brightness(0.2)">
+    <g transform="translate(4)">
+      <g filter="blur(1px)">
+        <path d="M16,16 l6,4 l0,1 l-5,5 Z" fill="rgba(0,0,0,0.6)"/>
+      </g>
+      <path d="M2,3 l1,0 l8,4 l1,-1 l4.5,2 l0,1 l1,1 l0,15 l-1,0 l-15,-9Z" stroke="var(--stroke)" fill="rgb(131, 130, 224)" />
+      <path d="M1,5 l1,0 l14.25,7 l0,13 l-0.5,0 l-14.75,-8 Z" stroke="var(--stroke)" fill="url(#grad1)" />
+      <line x1="1.5" y1="5.5" x2="15.5" y2="12.5" stroke-width="0.25" stroke="white" />
+    </g>
+  </g>
+</svg>

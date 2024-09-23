@@ -1,0 +1,36 @@
+@import url(./fonts/font-def.css);
+@import url(./styles/desktop.css);
+@import url(./styles/application.css);
+@import url(./styles/mac-window.css);
+@import url(./styles/menu.css);
+@import url(./styles/ui/index.css);
+
+:root {
+  --background: rgb(97, 100, 154);
+  --chrome: rgb(206, 206, 206);
+  --shadow-1: rgb(153, 153, 153);
+  --shadow-2: rgb(123, 123, 123);
+  --shadow-3: rgb(221, 221, 221);
+  --highlight: rgb(255, 255, 255);
+  /* --selection: rgba(45, 54, 149, 0.5); */
+  --selection: rgba(45, 54, 149, 0.9);
+  --grip-1: rgb(208, 208, 208);
+  --grip-2: rgb(158, 158, 158);
+  --ui-shadow-outset: inset 1px 1px 1px white, inset -1px -1px 1px var(--shadow-1);
+}
+
+body {
+  padding: 0;
+  margin: 0;
+  background-color: black;
+  display: grid;
+  height: 100vh;
+  overflow: hidden;
+}
+
+* {
+  font-family: 'Charcoal', 'Garamond', sans-serif;
+  user-select: none !important;
+  -webkit-font-smoothing: none;
+  -moz-osx-font-smoothing: grayscale;
+}

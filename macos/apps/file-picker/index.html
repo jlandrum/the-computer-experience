@@ -1,0 +1,287 @@
+<template>
+  <app-file-picker>
+    <template window="load-file">
+      <mac-window chromeless modal width="auto" height="auto">
+        <mac-window-content>
+          <ui-dropdown>
+            <ui-dropdown-list>
+            </ui-dropdown-list>
+          </ui-dropdown>
+          <span class="disk">MacintoshHD</span>
+          <ui-list></ui-list>
+          <div class="buttons">
+            <ui-button action="eject" disabled>Eject</ui-button>
+            <ui-button action="desktop">Desktop</ui-button>
+            <hr />
+            <ui-button action="cancel">Cancel</ui-button>
+            <ui-button action="open" primary disabled>Open</ui-button>
+          </div>
+        </mac-window-content>
+      </mac-window>
+    </template>
+    <template window="save-file">
+      <mac-window chromeless modal width="auto" height="auto">
+        <mac-window-content>
+          <ui-dropdown>
+            <ui-dropdown-list>
+            </ui-dropdown-list>
+          </ui-dropdown>
+          <input type="text" />
+          <span class="disk">MacintoshHD</span>
+          <ui-list></ui-list>
+          <div class="buttons">
+            <ui-button action="desktop">Desktop</ui-button>
+            <ui-button action="cancel">Cancel</ui-button>
+            <hr />
+            <ui-button action="make_folder" disabled>New Folder</ui-button>
+            <ui-button action="save" primary disabled>Save</ui-button>
+          </div>
+        </mac-window-content>
+      </mac-window>
+    </template>
+    <style>
+      app-file-picker {
+        & mac-window-content {
+          display: grid !important;
+          grid-template-rows: auto 1fr;
+          gap: 4px;
+          padding: 8px 0 12px 8px;
+        }
+        ui-list {
+          min-width: 120px;
+        }
+        ui-dropdown {
+          align-self: center;
+          justify-self: center;
+          grid-column: 1;
+        }
+        input[type="text"] {
+          grid-column: 1 / span 2;
+          grid-row: 3;
+        }
+        .disk {
+          grid-column: 2;
+          justify-self: right;
+          padding-right: 10px;
+        }
+        .buttons {
+            padding: 0 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            & hr {
+              border: none;
+              border-top: 1px solid var(--border);
+              width: 100%;
+              height: 1px;
+              background-color: var(--shadow-1);
+            }
+          }
+        & .top {
+          display: flex;
+          direction: row;
+          justify-content: space-between;
+          padding-right: 10px;
+        }
+        & .actions {
+
+        }
+        ui-list {
+          flex-grow: 1;
+        }
+      }
+    </style>
+  </app-file-picker>
+</template>
+
+<script>
+  class FilePicker extends MacApplication {    
+    #vdiskExplorer;
+    // UI Elements
+    #files; 
+    #dropdown;
+    #saveButton;
+    #openButton;
+    #newFolder;
+    #fileNameInput;
+    #diskLabel;
+    // State
+    #targetFile;
+    #targetFolder;
+    #type;
+    #targetDisk = "MacintoshHD";
+
+    constructor() {
+      super();
+      this.#vdiskExplorer = new VDiskExplorer(MacintoshHD);
+    }
+    
+    get name() { return 'File Picker' }
+    get icon() { return 'apps/file-picker/icon.png' }
+
+    newWindow = ({type = 'load-file', file}) => {
+      const window = this.spawnWindowFromTemplate(type);
+      this.connectWindow(window, type, file);
+      return window;
+    }
+
+    connectedCallback() {
+      super.connectedCallback();
+    }
+
+    connectWindow = (window, type, file) => {
+      this.#type = type;
+      this.#dropdown = this.querySelector('ui-dropdown');
+      this.#files = this.querySelector('ui-list');
+      
+      this.#diskLabel = this.querySelector('.disk');
+      this.#saveButton = this.querySelector('ui-button[action="save"]');
+      this.#openButton = this.querySelector('ui-button[action="open"]');
+      this.#fileNameInput = this.querySelector('input');
+      this.#newFolder = this.querySelector('ui-button[action="make_folder"]');
+
+      if (this.#fileNameInput) {
+        this.#fileNameInput.addEventListener('input', (e) => {
+          this.#targetFile = e.target.value;
+          this.updateUi();
+        });
+      }
+
+      this.#dropdown?.addEventListener?.('select', (e) => {
+        this.#vdiskExplorer.cd(e.detail.value);
+        this.#targetFolder = this.#vdiskExplorer.cwd;
+        this.#targetFile = null;
+        this.updateUi();
+      });
+
+      this.#files.addEventListener('select', ({detail: { value: file, doubleClick }}) => {
+        if (file instanceof Folder) {
+          if (doubleClick) {
+            this.#vdiskExplorer.cd(file.name);
+          }
+          this.#targetFolder = this.#vdiskExplorer.cwd;
+          this.#targetDisk = file.path.split('/')?.[2] || 'MacintoshHD';
+          if (this.#fileNameInput) {
+            this.#targetFile = this.#fileNameInput.value;
+          }
+        } else if (file instanceof File) {
+          this.#targetFile = file.name;
+          if (this.#fileNameInput) {
+            this.#fileNameInput.value = file.name;
+          }
+          if (doubleClick) {
+            this.dispatchEvent(new CustomEvent('select', { detail: file }));
+            this.exit();
+          }
+        }
+        this.updateUi();
+      });
+
+      this.#vdiskExplorer.addEventListener('change', this.syncFs);
+
+      setTimeout(() => {
+        this.syncFs();
+      }, 1);
+
+      if (file) {
+        this.#vdiskExplorer.cd(file.parent.path);
+        this.#fileNameInput.value = file.name;
+        this.#targetFile = file.name;
+        this.#targetFolder = '/' + file.parent.path;
+        this.updateUi();
+      }
+
+      this.updateUi();
+    }
+
+    updateUi = () => {
+      if (this.#diskLabel) {
+        this.#diskLabel.textContent = this.#targetDisk;
+      }
+      if (this.#targetFile && this.#vdiskExplorer.isWritable) {
+        this.#newFolder?.removeAttribute?.('disabled');
+      } else {
+        this.#newFolder?.setAttribute?.('disabled', 'true');
+      }
+      if (this.#type === 'load-file') {
+        if (this.#targetFile) {
+          this.#openButton?.removeAttribute?.('disabled');
+        } else {
+          this.#openButton?.setAttribute?.('disabled', 'true');
+        }
+      } else if (this.#type === 'save-file') {
+        if (this.#targetFile && this.#vdiskExplorer.isWritable) {
+          this.#saveButton?.removeAttribute?.('disabled');
+        } else {
+          this.#saveButton?.setAttribute?.('disabled', 'true');
+        }
+      }
+    }
+
+
+    // Given an array of folders, return { label: string, value: string } for each folder
+    // where each value is '../' for every level
+    get cwdToSelect() {
+      const tree = this.#vdiskExplorer.cwd.split('/').filter(Boolean);
+      return tree.map((folder, i) => {
+        return { label: folder, value: '../'.repeat(tree.length - i - 1) }
+      }).reverse();
+    }
+
+    syncFs = () => {
+      this.#dropdown.setItems(this.cwdToSelect, it => it);
+      this.#files.setItems(this.#vdiskExplorer.ls(), it => {
+        return { label: `${it.name}`, value: it }
+      });
+    }
+
+    onAction = (action, event) => {
+      switch (event) {
+        case 'desktop':
+          this.#vdiskExplorer.cd('/Desktop');
+          break;
+        case 'open':
+          this.#vdiskExplorer.cd(this.#targetFolder);
+          const fileOpen = this.#vdiskExplorer.getFile(this.#targetFile);
+          if (fileOpen) {
+              this.dispatchEvent(new CustomEvent('select', { detail: fileOpen }));
+          } else {
+            //this.showDialog('Error: File not found, it may no longer exist.');
+          }
+          this.exit();
+          break;
+        case 'save':
+          this.#vdiskExplorer.cd(this.#targetFolder);
+          if (this.#vdiskExplorer.getFile(this.#targetFile)) {
+            this.showDialog(
+              'Error: File already exists, please choose a different name.', 
+              { actions: { ok: 'Ovewrite', cancel: 'Cancel' }}, 
+              (action) => {
+                if (action === 'ok') {
+                  const fileSave = this.#vdiskExplorer.getFile(this.#targetFile, true);
+                  this.dispatchEvent(new CustomEvent('select', { detail: fileSave }));
+                  this.exit();                
+                }
+            });
+            return;
+          } else {
+            const fileSave = this.#vdiskExplorer.getFile(this.#targetFile, true);
+            this.dispatchEvent(new CustomEvent('select', { detail: fileSave }));
+            this.exit();
+          }
+          break;
+        case 'make_folder':
+          this.#vdiskExplorer.mkdir(this.#targetFile);
+          this.syncFs();
+          this.#targetFile = null;
+          this.updateUi();
+          break;
+        case 'cancel':
+          this.exit();
+          break;
+      }
+    }
+  }
+
+  customElements.define('app-file-picker', FilePicker);
+</script>

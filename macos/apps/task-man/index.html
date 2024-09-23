@@ -1,0 +1,69 @@
+<template>
+  <app-task-man no-focus>
+    <mac-window width="200" height="auto" x="590" y="0" always-on-bottom no-focus>
+      <mac-window-chrome>
+        <chrome-close></chrome-close>
+        <span>TaskMan</span>
+      </mac-window-chrome>
+      <mac-window-content>
+        <ui-frame shallow white>
+          <pre>
+          </pre>
+        </ui-frame>
+      </mac-window-content>
+    </mac-window>
+    <style>
+      app-simple-text {
+        & textarea {
+          width: 100%;
+          height: 100%;
+          border: none;
+          color: var(--text);
+          font-size: 11px;
+          padding: 8px;
+          resize: none;
+          outline: none;
+          overflow: auto;
+          box-sizing: border-box;
+        }
+      }
+    </style>
+  </app-task-man>
+</template>
+
+<script>
+  if (typeof TaskMan === 'undefined') {
+    class TaskMan extends MacApplication {
+      #timer;
+
+      constructor() {
+        super();
+      }
+
+      connectedCallback() {
+        super.connectedCallback();
+        this.#timer = setInterval(() => {
+          this.querySelector('pre').textContent = `== Active ==
+${MacApplication.activeApplication}
+
+== Processes ==
+${MacApplication.processes.map(p => p.name).join('\n')}`.trim();
+        }, 1000);
+      }
+
+      disconnectedCallback() {
+        clearInterval(this.#timer);
+      }
+      
+      showAbout() {
+        this.showDialog('TaskMan');
+      }
+
+      get name() { return 'TaskMan' }
+
+      newWindow = () => {}
+    }
+
+    customElements.define('app-task-man', TaskMan);
+  }
+</script>

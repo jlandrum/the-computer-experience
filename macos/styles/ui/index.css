@@ -1,0 +1,53 @@
+@import url('./list.css');
+@import url('./frame.css');
+@import url('./button.css');
+@import url('./icons.css');
+
+ui-select {
+  border: 1px solid var(--fg-color);
+  border-radius: 2px;
+  box-shadow: inset 1px 1px 0px white, inset -1px -1px 0px var(--shadow-1);
+  padding: 2px 4px;
+  position: relative;
+  height: 12px;
+
+  & ui-select-item {
+    padding: 2px 4px;
+  }
+
+  & ui-select-item:not([selected]) {
+    &:first-of-type {
+      border-top: 1px solid var(--fg-color);
+    }
+    &:last-of-type {
+      border-bottom: 1px solid var(--fg-color);
+    }
+    background-color: var(--chrome);
+    border-left: 1px solid var(--fg-color);
+    border-right: 1px solid var(--fg-color);
+  }
+
+  & ui-select-item:not([selected]) {
+    display: none;
+  }
+
+  &[open] {
+    & ui-select-item {
+      display: block;
+    }
+  }
+}
+
+ui-input, input {
+  border: 1px solid var(--fg-color);
+  border-radius: 2px;
+  box-shadow: inset 1px 1px 0px white, inset -1px -1px 0px var(--shadow-1);
+  padding: 2px 4px;
+  position: relative;
+  outline: none;
+  font-size: 11px;
+  &[disabled] {
+    --fg-color: var(--shadow-1);
+    box-shadow: none;
+  }
+}
