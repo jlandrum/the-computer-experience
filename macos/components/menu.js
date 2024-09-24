@@ -11,7 +11,9 @@ class MenuBar extends HTMLElement {
   }
 
   static replaceSegment(menu) {
-    MenuBar.#primaryMenu.querySelector('menu-segment').replaceWith(menu);
+    if (menu) {
+      MenuBar.#primaryMenu.querySelector('menu-segment').replaceWith(menu);
+    }
   }
 
   static updateMenuItem(identifier, state) {
@@ -46,7 +48,7 @@ class MenuBar extends HTMLElement {
       if (MacApplication.activeApplication === 'Finder') {
         MenuBar.#about.setAttribute('label', 'About This Computer');
       } else {
-        MenuBar.#about.setAttribute('label', 'About ' + MacApplication.activeApplication);
+        MenuBar.#about.setAttribute('label', 'About ' + MacApplication.activeApplication.name);
       }
     }, 1000);
     this.addEventListener('mousedown', this.onMouseDown);
@@ -101,11 +103,7 @@ class MenuBar extends HTMLElement {
   }
 
   onAboutClick = () => {
-    if (MacApplication.activeApplication === 'Finder') {
-      MacApplication.spawn('about-mac');
-    } else {
-      MacApplication.emit('menu', 'about');
-    }
+    MacApplication.emit('menu', 'about');
   }
 }
 
@@ -258,10 +256,10 @@ class AppMenuItem extends MenuItem {
     super.connectedCallback();
     
     this.watcher = setInterval(() => {
-      if (MacApplication.activeApplication !== 'Finder') {
-        this.setAttribute('title', MacApplication.activeApplication);
-        this.setAttribute('icon', MacApplication.activeApplication.toLowerCase());
-        this.style.setProperty('--icon', `url(/macos/${MacApplication.activeAppIcon})`);
+      if (MacApplication.activeApplication.name !== 'Finder') {
+        this.setAttribute('title', MacApplication.activeApplication.name);
+        this.setAttribute('icon', MacApplication.activeApplication.icon);
+        this.style.setProperty('--icon', `url(/macos/${MacApplication.activeApplication.icon})`);
       } else {
         this.setAttribute('title', 'Finder');
         this.removeAttribute('icon');

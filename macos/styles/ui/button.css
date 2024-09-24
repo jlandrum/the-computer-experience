@@ -23,7 +23,7 @@ mac-button, ui-button {
     --fg-color: var(--shadow-1);
     box-shadow: none;
   }
-  &:active {
+  &:not([disabled]):active {
     background-color: var(--shadow-1);
     box-shadow: inset -1px -1px 0px white, inset 1px 1px 0px var(--shadow-2);
   }

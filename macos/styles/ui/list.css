@@ -69,7 +69,7 @@ ui-list {
 
   & ui-list-item {
     padding: 1px 4px;
-    &:focus {
+    &:focus, &[selected] {
       background-color: var(--selection);
       color: white;
     }

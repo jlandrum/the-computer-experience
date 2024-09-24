@@ -31,9 +31,9 @@ class MacDesktop extends HTMLElement {
   /** Focuses the desktop, removing focus from all apps */
   static focusDesktop(e) {
     // If the target is the desktop, blur all applications
-    if (e.target instanceof UiIcons && e.target.hasAttribute('desktop')) {
-      MacApplication.focus('finder');
+    if (e.target instanceof UIIcons && e.target.hasAttribute('desktop')) {
       MacApplication.blurAll();
+      MacApplication.focus('finder');
     }
   }
 

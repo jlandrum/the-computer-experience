@@ -4,17 +4,17 @@ class UIDropdown extends HTMLElement {
   }
 
   connectedCallback() {
-    this.addEventListener('click', this.#onClick);
-    document.addEventListener('click', this.#onDocumentClick);
+    this.addEventListener('click', this.onClick);
+    document.addEventListener('click', this.onDocumentClick);
   }
 
   
-  #onClick = (e) => {
+  onClick = (e) => {
     if (!e.target === this) return;
     this.toggle(!this.hasAttribute('open'));
   }
 
-  #onDocumentClick = (e) => {
+  onDocumentClick = (e) => {
     if (!this.contains(e.target)) {
       this.toggle(false);
     }
@@ -59,14 +59,41 @@ class UIDropdownList extends HTMLElement {
     this.#data.forEach((item) => {
       const el = document.createElement('ui-dropdown-list-item');
       el.innerText = item.label;
-      el.addEventListener('click', () => {
-        this.#dropdown.dispatchEvent(new CustomEvent('select', { detail: item }));
-      });
+      el.value = item.value;
       this.appendChild(el);
     }); 
     this.selection = 0;
   }
 }
 
+class UIDropdownListItem extends HTMLElement {
+  #value;
+
+  constructor() {
+    super();
+  }
+
+  get value() { return this.#value }
+  set value(v) { this.#value = v }
+
+  connectedCallback() {
+    this.addEventListener('click', this.onClick);
+    this.setAttribute('tabindex', '0');
+    this.setAttribute('role', 'listitem');
+  }
+
+  onClick = () => {
+    this.focus();
+    MacApplication.emit('dropdown', 
+      this.closest('ui-dropdown').getAttribute('target'), 
+      { value: this.#value });
+  }
+}
+
+globalThis.UIDropdown = UIDropdown;
+globalThis.UIDropdownList = UIDropdownList;
+globalThis.UIDropdownListItem = UIDropdownListItem;
+
 customElements.define('ui-dropdown', UIDropdown);
 customElements.define('ui-dropdown-list', UIDropdownList);
+customElements.define('ui-dropdown-list-item', UIDropdownListItem);

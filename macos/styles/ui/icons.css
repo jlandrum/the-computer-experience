@@ -1,7 +1,14 @@
 ui-icons {
   width: 100%;
   height: 100%;
-  overflow: hidden;
+  overflow: auto;
+  position: relative;
+  box-sizing: border-box;
+
+  /* Hide scrollbar */
+  &::-webkit-scrollbar {
+    display: none;
+  }
 
   & ui-icon {
     display: block;

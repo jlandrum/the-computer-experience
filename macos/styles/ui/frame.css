@@ -7,7 +7,6 @@ ui-frame {
   background-color: var(--chrome);
   border-radius: 1px;
   box-shadow: inset 1px 1px 0px white;
-  overflow: auto;
   &[shallow] {
     padding: 0;
   }

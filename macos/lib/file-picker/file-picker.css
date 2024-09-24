@@ -1,0 +1,60 @@
+lib-open-file-controller, lib-save-file-controller {
+ & mac-window-content {
+    display: grid !important;
+    grid-template-rows: auto 1fr;
+    gap: 4px;
+    padding: 8px 8px 12px 8px;
+  }
+  ui-list {
+    min-width: 120px;
+  }
+  ui-dropdown {
+    align-self: center;
+    justify-self: center;
+    grid-column: 1;
+  }
+  input[type="text"] {
+    grid-column: 1 / span 2;
+    grid-row: 3;
+  }
+  .disk {
+    grid-column: 2;
+    justify-self: right;
+    padding-right: 10px;
+  }
+  .buttons {
+      padding: 0 0 0 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      & hr {
+        border: none;
+        border-top: 1px solid var(--border);
+        width: 100%;
+        height: 1px;
+        background-color: var(--shadow-1);
+      }
+    }
+  & .top {
+    display: flex;
+    direction: row;
+    justify-content: space-between;
+    padding-right: 10px;
+  }
+  & .actions {
+
+  }
+  ui-list {
+    flex-grow: 1;
+  }
+}
+
+lib-overwrite-controller {
+  .buttons {
+    margin-top: 8px;
+    justify-content: end;
+    align-items: center;
+    display: flex;
+    gap: 4px;
+  }
+}

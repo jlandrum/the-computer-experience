@@ -3,7 +3,7 @@
     <menu-segment>
       <menu-item title="File">
         <menu-dropdown>
-          <menu-dropdown-item label="New Folder" action="new-folder" disabled></menu-dropdown-item>
+          <menu-dropdown-item label="New Folder" action="new-folder"></menu-dropdown-item>
           <menu-dropdown-item label="Close" action="close"></menu-dropdown-item>
           <menu-divider></menu-divider>
           <menu-dropdown-item label="Get Info" action="get-info" disabled></menu-dropdown-item>
@@ -26,6 +26,7 @@
       <ui-icon type="app" icon="apps/task-man/icon" label="TaskMan" target="task-man" x="720" y="150"></ui-icon>
       <!-- <ui-icon type="folder" icon="apps/finder/drive" label="Trash" target="/Desktop/Trash" x="720" y="100"></ui-icon> -->
     </ui-icons>
+    <!-- Finder File Browser Window -->
     <template window="finder">
       <finder-window>
         <mac-window resizable>
@@ -46,6 +47,72 @@
         </mac-window>
       </finder-window>
     </template>
+    <!-- About This Computer Window -->
+    <template window="about">
+      <mac-window-controller>
+        <mac-window width="350" height="294">
+          <mac-window-chrome>
+            <chrome-close></chrome-close>
+            <span>About This Computer</span>
+            <chrome-shrink></chrome-shrink>
+            <chrome-collapse></chrome-collapse>
+          </mac-window-chrome>
+          <mac-window-content>
+            <ui-frame>
+              <ui-frame white nopad>
+                <img src="images/about.png" width="300" />
+              </ui-frame>
+              <p>
+                <strong>Version:</strong> Mac OS 9.2.2
+              </p>
+              <p>
+                <strong>Built-in Memory:</strong> 256 MB
+              </p>
+              <p>
+                <strong>Virtual Memory:</strong> Off
+              </p>
+              <p>
+                <strong>Largest Unused Block:</strong> 220.8 MB
+              </p>
+            <ui-frame white>
+              <p>
+                This site plays homage to the classic Mac OS 9 operating system. This operating system was released in 1999 and was the last version of the classic Mac OS. It was succeeded by Mac OS X in 2001. Mac OS 9 introduced many new features, such as multiple users, voiceprint password, and voice control.
+              </p>
+              <p>
+                It also introduced the "Platinum" interface, which was a major design overhaul from the previous "Aqua" interface.
+              </p>
+              <p>
+                This site is a recreation of the Mac OS 9 operating system, and is not affiliated with Apple Inc.
+              </p>
+            </ui-frame>
+            </ui-frame>
+          </mac-window-content>
+        </mac-window>
+      </mac-window-controller>
+    </template>
+    <!-- Open File Dialog -->
+    <template window="load-file">
+      <mac-window-controller>
+        <mac-window chromeless modal width="auto" height="auto">
+          <mac-window-content>
+            <ui-dropdown>
+              <ui-dropdown-list>
+              </ui-dropdown-list>
+            </ui-dropdown>
+            <span class="disk">MacintoshHD</span>
+            <ui-list></ui-list>
+            <div class="buttons">
+              <ui-button action="eject" disabled>Eject</ui-button>
+              <ui-button action="desktop">Desktop</ui-button>
+              <hr />
+              <ui-button action="cancel">Cancel</ui-button>
+              <ui-button action="open" primary disabled>Open</ui-button>
+            </div>
+          </mac-window-content>
+        </mac-window>
+      </mac-window-controller>
+    </template>
+    <!-- Styles -->
     <style>
       finder-app {
         & > ui-icons {
@@ -63,151 +130,3 @@
     </style>
   </finder-app>
 </template>
-
-<script>
-if (typeof FinderApp === 'undefined') {
-  class FinderApp extends MacApplication {
-    static #openFiles = [];
-
-    constructor() {
-      super();
-    }
-
-    get name() { return 'Finder' }   
-    get icon() { return 'finder/icon.png' }
-
-    newWindow = ({path}) => {
-      const existingWindow = this.getWindowControllers().find(window => window.path === path);
-      if (existingWindow) {
-        existingWindow.focus();
-        return existingWindow;
-      }
-      const window = this.spawnWindowFromTemplate('finder');
-      window.path = path;
-      FinderApp.#openFiles.push(path);
-      return window;
-    }
-
-    onAction = (source, action, extra) => {
-      ['icon', 'dblclick', () => {
-        const type = extra.icon?.getAttribute?.('type');
-        switch (type) {
-          case 'folder':
-            this.newWindow({path: extra.icon.getAttribute('target')});
-            break;
-          case 'app':
-            MacApplication.spawn(extra.icon.getAttribute('target'))
-            break;
-          default:
-            const path = extra.icon.getAttribute('target');
-            MacApplication.openFile(path);
-        }
-      }].act();
-
-      ['menu', 'close', this.activeWindow?.close].act();
-      ['menu', 'send-to-trash', this.activeWindow?.sendToTrash].act();
-      ['application', 'windows-changed', this.updateState].act();
-    }
-
-    updateState = () => {
-      // Update icons
-      const icons = this.querySelectorAll('ui-icons').forEach(it => it.updateState?.());
-      // Update menu
-      const hasWindows = !!this.getWindowControllers().length;
-      MenuBar.updateMenuDropdownItem('[label="Close"]', { disabled: !hasWindows && !!this.activeWindow  });
-    }
-
-    /**
-     * Sets the state of a file or app in Finder to adjust icons
-     * @param {string} target - The path of the file or app
-     * @param {boolean} state - Whether the file is open or not
-     */
-    static setFileState(target, state) {
-      if (state) {
-        FinderApp.#openFiles.push(target);
-      } else {
-        FinderApp.#openFiles = FinderApp.#openFiles.filter(file => file !== target);
-      }
-      document.querySelector('finder-app').updateState();
-    }
-
-    static getFileState(target) {
-      return FinderApp.#openFiles.includes(target);
-    }
-  }
-
-  class FinderWindow extends MacWindowController {
-    #vdiskExplorer = new VDiskExplorer();
-    #path;
-    #files;
-    #details;
-    #selectedIcon;
-
-    constructor() {
-      super();
-    }
-
-    onClose() {
-      FinderApp.setFileState(this.#path, false);
-    }
-
-    connectedCallback() {
-      this.#details = this.querySelector('[data-id="details"]');
-      this.#vdiskExplorer.addEventListener('change', this.updateDisplay);
-      this.addEventListener('click', this.onIconClick);
-    }
-
-    disconnectedCallback() {
-      this.#vdiskExplorer.removeEventListener('change', this.updateDisplay);
-      this.removeEventListener('click', this.onIconClick);
-    }
-
-    onIconClick = (e) => {
-      if (e.target instanceof UiIcon) {
-        this.#selectedIcon = e.target;
-      }
-    }
-
-    sendToTrash = () => {
-      if (this.#selectedIcon) {
-        this.#vdiskExplorer.rm(this.#selectedIcon.getAttribute('target'));
-        this.updateDisplay();
-      }
-    }
-
-    set path(value) {
-      this.#vdiskExplorer.cd(value);
-      this.#path = value;
-      this.updateDisplay();
-    }
-
-    get path() { return this.#path }
-
-    updateDisplay = () => {
-      if (!this.#path) return;
-      this.#files = this.#vdiskExplorer.ls();
-      this.querySelector('ui-icons').innerHTML = '';
-      this.#files.forEach((file, i) => {
-        const icon = document.createElement('ui-icon');
-        const ext = (file.name.split('/').reverse()[0].split('.')?.[1] || 'txt');
-        icon.setAttribute('icon', file instanceof Folder ? 'apps/finder/folder' : `apps/finder/file@${ext}`);
-        icon.setAttribute('label', file.name);
-        icon.setAttribute('target', this.#path + '/' + file.name);
-        icon.setAttribute('type', file instanceof Folder ? 'folder' : 'file');
-        icon.setAttribute('x', `${i * 60 + 32}`);
-        icon.setAttribute('y', '40');
-        this.querySelector('ui-icons').appendChild(icon);
-      });
-      if (this.#details) {
-        this.#details.textContent = `${this.#files.length} items, ${this.#vdiskExplorer.available} available`;
-      }
-      this.querySelector('mac-window-chrome span').textContent = this.#path.split('/').reverse()[0];
-    }
-  }
-
-  globalThis.FinderApp = FinderApp;
-
-  customElements.define('finder-app', FinderApp);
-  customElements.define('finder-window', FinderWindow);
-}
-</script>

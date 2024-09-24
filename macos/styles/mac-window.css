@@ -220,7 +220,7 @@ mac-window-underlay {
   position: absolute;
   inset: 0;
   z-index: 1000;
-  /* background-color: rgba(0,0,0,0.5); */
+  /* background-color: rgba(0,0,0,1); */
 }
 
 mac-screen-glare {
@@ -229,5 +229,5 @@ mac-screen-glare {
   inset: 0;
   background-color: white;
   z-index: -1000;
-  filter: blur(100px);
+  filter: blur(50px);
 }

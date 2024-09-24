@@ -1,4 +1,13 @@
 const disks = [];
+const welcome = `Welcome to MacOS 9!
+
+This is a web-based recreation of MacOS 9, a classic operating system from Apple. 
+
+This allows you to experience the nostalgia of the classic Macintosh operating system right in your browser.
+
+This project is not affiliated with Apple Inc. in any way.
+
+Enjoy!`;
 
 class File {
   #name; #contents; #parent;
@@ -107,19 +116,10 @@ class Disk {
 }
 
 class VDisk extends Disk {
-  static #eventBus = new EventTarget();
   fileTree;
 
   static emitChange = () => {
-    VDisk.#eventBus.dispatchEvent(new Event('change'));
-  }
-
-  static addEventListener(event, callback) {
-    VDisk.#eventBus.addEventListener(event, callback);
-  }
-
-  static removeEventListener(event, callback) {
-    VDisk.#eventBus.removeEventListener(event, callback);
+    VDiskExplorer.emitChange();
   }
 
   constructor() {
@@ -129,7 +129,7 @@ class VDisk extends Disk {
     if (localStorage.getItem('__hasDisk') !== 'true') {
       // If the disk hasn't been initialized, initialize it.
       this.fileTree.files.push(
-        new File('welcome.txt', 'Welcome to macOS!'),
+        new File('welcome.txt', welcome),
       );
       localStorage.setItem('__hasDisk', 'true');
       this.write();
@@ -153,7 +153,7 @@ class VDisk extends Disk {
         }
       });
     }
-    return folder.files;
+    return folder;
   }
 
   write() {
@@ -212,10 +212,10 @@ class VDiskExplorer {
     const [_, disk, ...path] = this.#cwd.split('/').slice(1);
     if (!disk) { return disks.map(disk => disk.root) }
     const vdisk = disks.find(d => d.name === disk); 
-    return vdisk.readdir(path.join('/'));
+    return vdisk.readdir(path.join('/')).files;
   }
 
-  cd(folder) {
+  cd(folder) {    
     // If starting with /, go to the root
     if (folder.startsWith('/')) {
       this.#cwd = '/';
@@ -229,8 +229,7 @@ class VDiskExplorer {
       } else {
         return acc.concat(folder);
       }
-    }, this.#cwd.split('/')).filter(it => it).join('/');
-    VDiskExplorer.emitChange();
+    }, this.#cwd.split('/')).filter(it => it).join('/');    
     this.emitChange();
   }
 
@@ -239,21 +238,19 @@ class VDiskExplorer {
     const vdisk = disks.find(d => d.name === disk);
     const filename = path.pop();
     const folder =  vdisk.readdir(path.join('/'));
-    const file = folder.find(it => it.name === filename);
-    folder.splice(folder.indexOf(file), 1);
+    const file = folder.files.find(it => it.name === filename);
+    folder.files.splice(folder.files.indexOf(file), 1);
     vdisk.write();
     this.emitChange();
-    VDiskExplorer.emitChange();
   }
 
   mkdir(folderName) {
     const [_, disk, ...path] = this.#cwd.split('/').slice(1);
     const vdisk = disks.find(d => d.name === disk);
     const folder =  vdisk.readdir(path.join('/'));
-    folder.push(new Folder(folderName, []));
+    folder.files.push(new Folder(folderName, []));
     vdisk.write();
     this.emitChange();
-    VDiskExplorer.emitChange();
   }
 
   getFile = (fileNameOrPath, create = false) => {
@@ -270,14 +267,14 @@ class VDiskExplorer {
       console.warn('No folder found', path);
       return null;
     }
-    const existingFile = folder.find(it => it.name === file);
+    const existingFile = folder.files.find(it => it.name === file);
 
     if (existingFile) {
       console.info('Loading existing file', existingFile);
       return existingFile;
     } else if (create) {
       const newFile = new File(file, '');
-      folder.push(newFile);
+      folder.files.push(newFile);
       newFile.setParent(folder);
       console.info('Creating file', existingFile);
       return newFile;
@@ -307,6 +304,7 @@ class VDiskExplorer {
 
   emitChange() {
     this.#localEventBus.dispatchEvent(new Event('change'));
+    VDiskExplorer.emitChange();
   }
 
   addEventListener(event, callback) {

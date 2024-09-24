@@ -16,28 +16,20 @@ export class MacWindow extends HTMLElement {
   #modalUnderlay = null;
   #menuSegment;
   #children = [];
-  #parent = null;
   #screenGlare = null;
   #application;
  
-  /** 
-   * Sets the parent window host
-   * This allows the window to communicate with the parent host
-   * Windows themsleves should not be subclassed, but rather
-   * the host should be subclassed with the window as a child.
-   * @param {MacWindowController} window The parent window host
-   * @returns {void}
-   */
-  set parent(window) { this.#parent = window; }
-
   constructor() {
     super();
   }
+
+  get screenGlare() { return this.#screenGlare }
 
   connectedCallback() {
     this.#screenGlare = document.createElement('mac-screen-glare');
     this.#screenGlare.style.width = '0';
     this.#screenGlare.style.height = '0';
+    this.#screenGlare.style.display = 'none';
     document.body.appendChild(this.#screenGlare);
     this.classList.add('mac-window');
     this.#menuSegment = this.querySelector('menu-segment');
@@ -66,6 +58,14 @@ export class MacWindow extends HTMLElement {
       this.showOpenAnimation();
     }, 1);
     this.#application?.notifyWindowsChanged();
+    window.addEventListener('resize', this.updateGlow);
+  }
+
+  disconnectedCallback() {
+    this.removeEventListener('mousedown', this.onMouseDown);
+    document.removeEventListener('mouseup', this.onMouseUp);
+    document.removeEventListener('mousemove', this.onMouseMove);
+    window.removeEventListener('resize', this.updateGlow);
   }
 
   onMouseDown = (e) => {
@@ -131,20 +131,25 @@ export class MacWindow extends HTMLElement {
    * @returns {boolean} The focus state of the window
    */
   focus() {
-    if (this.isFocused) return true;
     if (this.hasAttribute('no-focus')) return false;
+    document.querySelectorAll('mac-window').forEach(w => w.blur());
     var topZ = MacWindow.zSortWindows();
     this.activeWindow?.blur();
     // Set this and children active  
     this.setAttribute('active', '');
-    this.#children.forEach(w => w.setAttribute('active', ''));
     // Set z-index
     if (!this.hasAttribute('always-on-bottom')) {
       this.style.zIndex = topZ + 2;
+    } 
+    if (this.hasAttribute('always-on-top')) {
+      this.style.zIndex = 1000;
+    } 
+    if (this.hasAttribute('modal')) {
+      this.style.zIndex = 1001;
     }
     // If underlay exists, set z-index
     if (this.#modalUnderlay) {
-      this.#modalUnderlay.style.zIndex = topZ + 1;
+      this.#modalUnderlay.style.zIndex = 1000;
     }
     // Notify application of focus
     this.#application?.focus();
@@ -160,12 +165,7 @@ export class MacWindow extends HTMLElement {
   resize = (w, h) => {
     this.style.width = w === "auto" ? "auto" : w + 'px';
     this.style.height = h === "auto" ? "auto" : h + 'px';
-    setTimeout(() => {
-      if (this.#screenGlare) {
-        this.#screenGlare.style.width = this.clientWidth + 'px';
-        this.#screenGlare.style.height = this.clientHeight + 'px';
-      }
-    });
+    this.updateGlow();
   }
 
   /** 
@@ -178,8 +178,7 @@ export class MacWindow extends HTMLElement {
   move = (x , y) => {
     this.style.left = x + 'px';
     this.style.top = y + 'px';
-    this.#screenGlare.style.left = x + MacDesktop.desktop.offsetLeft + 'px';
-    this.#screenGlare.style.top = y + MacDesktop.desktop.offsetTop + 'px';
+    this.updateGlow();
   }
 
   /** Makes the window inactive
@@ -198,7 +197,6 @@ export class MacWindow extends HTMLElement {
   makeModal = () => {
     this.#modal = true;
     this.#modalUnderlay = document.createElement('mac-window-underlay');
-    this.#application.addWindow(this);
     MacDesktop.appendChild(this.#modalUnderlay);
   }
 
@@ -259,7 +257,8 @@ export class MacWindow extends HTMLElement {
       return parseInt(a.style.zIndex) - parseInt(b.style.zIndex);
     });
     windows.forEach((w, i) => {
-      if (w.hasAttribute('always-on-top')) {
+      if (w.hasAttribute('modal')) {
+      } else if (w.hasAttribute('always-on-top')) {
         w.style.zIndex = 1000;
       } else if (w.hasAttribute('always-on-bottom')) {
         w.style.zIndex = 0;
@@ -297,8 +296,37 @@ export class MacWindow extends HTMLElement {
     }, 160);
   }
 
+  /** Updates the glow of the window
+   * @returns {void}
+   * */
+  updateGlow() {
+    setTimeout(() => {
+      if (this.screenGlare) {
+        this.screenGlare.style.display = 'block';
+        
+        let clipWidth = Math.max(0, (this.offsetLeft + this.clientWidth) - MacDesktop.desktop.clientWidth) -
+                        Math.min(0, this.offsetLeft);
+        let clipHeight = Math.max(0, (this.offsetTop + this.clientHeight) - MacDesktop.desktop.clientHeight) -
+                        Math.min(0, this.offsetTop);
+
+        let width = this.clientWidth - clipWidth;
+        let height = this.clientHeight - clipHeight;
+
+        let x = Math.max(MacDesktop.desktop.offsetLeft, this.offsetLeft + MacDesktop.desktop.offsetLeft);
+        let y = Math.max(MacDesktop.desktop.offsetTop, this.offsetTop + MacDesktop.desktop.offsetTop);
+
+        this.screenGlare.style.width = width + 'px';
+        this.screenGlare.style.height = height + 'px';
+        
+        this.screenGlare.style.left = x + 'px';
+        this.screenGlare.style.top = y + 'px';
+      }
+    });
+  }
+
   toggleShade() {
     this.toggleAttribute('shaded');
+    this.updateGlow();
   }
 }
 
@@ -362,6 +390,26 @@ class MacWindowController extends HTMLElement {
   }
 }
 
+class MacExternalWindowController extends MacWindowController {
+  constructor() {
+    super();
+  }
+
+  connectedCallback() {
+    MacApplication.activeApplication.setDelegate(this);
+  }
+
+  onFocus() {
+    MacApplication.activeApplication.setDelegate(this);
+  }
+
+  onClose() {
+    if (MacApplication.activeApplication.delegate === this) {
+      MacApplication.activeApplication.setDelegate(null);
+    }
+  }
+}
+
 class ChromeCollapse extends HTMLElement {
   constructor() {
     super();
@@ -393,6 +441,7 @@ class ChromeClose extends HTMLElement {
 globalThis.MacWindow = MacWindow;
 globalThis.MacWindowUnderlay = MacWindowUnderlay;
 globalThis.MacWindowController = MacWindowController;
+globalThis.MacExternalWindowController = MacExternalWindowController;
 
 globalThis.ChromeCollapse = ChromeCollapse;
 globalThis.ChromeClose = ChromeClose;

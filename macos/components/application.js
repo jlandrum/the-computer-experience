@@ -8,15 +8,14 @@
 class MacApplication extends HTMLElement {
   /** @type {EventTarget} Handles events to the actively listening application */
   static #eventBus = new EventTarget();
-  /** @type {MacApplication} The currently active application */
-  static #activeApplication;
   /** @type {Process[]} Holds references to running "applications" */
   static #processes = [];
   /** @type {[]} Holds behaviors; once an application is loaded, it does not need to be loaded again */  
   static #behaviors = [];
-
+  /** Defines a delegate that will receive events instead of the current application */
+  #delegate;
+  /** @type {MenuSegment} The menu segment for the application */
   #menu;
-  #isFocused;
 
   constructor() {
     super();
@@ -46,15 +45,13 @@ class MacApplication extends HTMLElement {
   
   focus = () => {
     // If already focused, return
-    if (MacApplication.#activeApplication === this) return;
+    if (MacApplication.activeApplication === this) return;
     
     // Blur all other applications
     MacApplication.blurAll(this);
-
-    MacApplication.#activeApplication = this;
-    MacApplication.#eventBus.addEventListener('action', this.#onAction);
+    MacApplication.#eventBus.addEventListener('action', this.#onAction);    
     MenuBar.replaceSegment(this.#menu);
-    this.#isFocused = true;
+    this.setAttribute('active', '');
   }
 
   /**
@@ -70,12 +67,11 @@ class MacApplication extends HTMLElement {
     this.getWindowControllers().forEach(w => w.blur());
 
     // If not focused, return
-    if (MacApplication.#activeApplication !== this) return;
+    if (MacApplication.activeApplication !== this) return;
  
     // Blur the application
     MacApplication.#eventBus.removeEventListener('action', this.#onAction);
-    MacApplication.#activeApplication = null;
-    this.#isFocused = false;
+    this.removeAttribute('active');
   }
 
   get activeWindow() { return this.getWindowControllers().find(w => w.isFocused) }
@@ -87,11 +83,17 @@ class MacApplication extends HTMLElement {
   #onAction = (e) => {
     const { source, action, ...detail } = e.detail;
     Array.prototype.act = function() {
-      if (this[0] === source && this[1] === action) {
+      if (this[0] === source && (this[1] === action || !this[1])) {
         this[2]?.(detail);
+        return !!this[2];
       }
     } 
-    this.onAction(source, action, detail);
+    // If the delegate handles the action, call the delegate
+    // If the delegate does not handle the action, call the application
+    // event listener.
+    if (!this.#delegate?.onAction?.(source, action, detail)) {
+      this.onAction(source, action, detail);
+    }
     Array.prototype._act = undefined;
   }
   
@@ -101,6 +103,19 @@ class MacApplication extends HTMLElement {
    * @function
    * @returns {string} The name of the application */
   get name() { throw new Error('Application MUST provide a name') }
+  
+  /** The icon for the application
+   * @returns {string} The path to the icon
+   */
+  get icon() { throw new Error('Application MUST provide an icon') }
+
+  get isFocused() { return this.getAttribute('active') !== null }
+
+  setDelegate = (delegate) => { 
+    this.#delegate = delegate;
+  }
+
+  get delegate() { return this.#delegate }
   
   /** Applications are expected to handle when a new window request is made 
    * @abstract
@@ -113,13 +128,6 @@ class MacApplication extends HTMLElement {
   /** Applications should handle events from UI events */
   onAction = () => { console.warn(this, 'Application did not provide an onAction method') }
 
-  /** The icon for the application
-   * @returns {string} The path to the icon
-   */
-  get icon() { throw new Error('Application MUST provide an icon') }
-
-  get isFocused() { return this.#isFocused }
-
   /**
    * Exits the application
    * This will close all windows and remove the application from the desktop
@@ -131,7 +139,6 @@ class MacApplication extends HTMLElement {
     this.getWindowControllers().forEach(w => w.close());
     // Remove the script for the process and the process from the list
     const index = MacApplication.#processes.findIndex(p => p.application === this);
-    MacApplication.#processes[index].script?.remove();
     MacApplication.#processes.splice(index, 1);
     // Focus the previous process
     MacApplication.#processes[MacApplication.#processes.length - 1]?.application.focus();
@@ -159,7 +166,6 @@ class MacApplication extends HTMLElement {
     MacApplication.#processes.forEach(p => {
       if (p.application !== exclude) p.application.blur()
     });
-    this.#activeApplication = null;
   }
 
   /**
@@ -169,6 +175,7 @@ class MacApplication extends HTMLElement {
    * @returns A promise that resolves to the opened app
    */
   static async spawn(app, args = {}) {
+    console.log('Spawning', app, args);
     const existingProcess = MacApplication.#processes.find(p => p.invokeName === app);
     if (existingProcess) {
       existingProcess.application.focus();
@@ -179,29 +186,20 @@ class MacApplication extends HTMLElement {
     }
 
     // Loads the app from the server
-    return fetch(`apps/${app}/index.html`).then(response => response.text()).then(html => {
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(html, 'text/html');
-      const appInstance = doc.querySelector('template').content.firstElementChild.cloneNode(true);
+    await fetch(`apps/${app}/index.js`).then(response => response.text()).then(js => {
+      // Load the script into the document
+      const script = document.createElement('script');
+      script.textContent = js + 'document.currentScript.remove()';
+      document.body.appendChild(script);
+    });
 
-      const appCode = doc.querySelector('script:not([src])')?.textContent;
-      const scriptEl = appCode ? (()=>{
-        const el = document.createElement('script');
-        el.textContent = appCode;
-        return el;
-      })() : null;
-
-      return new Promise((resolve) => {
-        if (scriptEl && !MacApplication.#behaviors.includes(app)) {
-          scriptEl.callback = resolve;
-          scriptEl.textContent += 'document.currentScript.callback(); document.currentScript.remove()';
-          scriptEl.addEventListener('load', resolve);
-          document.body.appendChild(scriptEl);
-          MacApplication.#behaviors.push(app);
-        } else {
-          resolve();
-        }
-      }).then(() => {        
+    return fetch(`apps/${app}/index.html`)
+      .then(response => response.text())
+      .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        return doc.querySelector('template').content.firstElementChild.cloneNode(true);
+      }).then((appInstance) => {        
         appInstance.invokeName = app;
         MacDesktop.appendChild(appInstance);
         MacApplication.#processes.push(new Process(appInstance, app));
@@ -209,14 +207,12 @@ class MacApplication extends HTMLElement {
           appInstance.newWindow(args);
         }
         appInstance.focus();
-
         return appInstance;  
-      })
-    }).catch((e) => {
-      console.error('Failed to load app', app, e.stack);
-      this.showDialog(`The application program ${app} could not be opened, because an error of type -39 occured.`);
-      throw new Error('Failed to load app');
-    });
+      }).catch((e) => {
+        console.error('Failed to load app', app, e.stack);
+        this.showDialog(`The application program ${app} could not be opened, because an error of type -39 occured.`);
+        throw new Error('Failed to load app');
+      });
   }
 
   /**
@@ -236,8 +232,22 @@ class MacApplication extends HTMLElement {
     return window;
   }
 
-  /** 
+  /**
+   * Appends a window to the application.
+   * This should only be used if the window is not created from a template
+   * or is created from an external source, such as lib.
+   * @param {AppWindowController} window The window to attach
+   */
+  appendWindow = (window) => {
+    if (!window) return;
+    this.appendChild(window);
+  }
+
+  /**
    * Creates and shows a dialog window
+   * @param {*} text 
+   * @param {*} extra 
+   * @param {*} callback 
    */
   showDialog = (text, extra, callback) => { MacApplication.showDialog(text, extra, callback) }
   static showDialog = (text, extra, callback) => {
@@ -275,14 +285,30 @@ class MacApplication extends HTMLElement {
     });
   }
 
-  // Get all the processes
+  /**
+   * Get all virtual processes
+   * @returns {Process[]} A list of all virtual processes
+   * @readonly
+   */
   static get processes() { return MacApplication.#processes }
 
-  // Get the active application name
-  static get activeApplication() { return MacApplication.#activeApplication?.name || 'Finder' }
+  /**
+   * Get all applications
+   * @returns {MacApplication[]} A list of all applications
+   * @readonly
+   */
+  static get applications() { return MacApplication.#processes.map(p => p.application) }
 
-  // Get the active application icon
-  static get activeAppIcon() { return MacApplication.#activeApplication?.icon || 'icons/finder.png' }
+  /**
+   * Get the active application
+   * @returns {MacApplication} The active application
+   * @readonly
+   * @static
+   */
+  static get activeApplication() { return MacApplication.#processes.find(p => p.application.isFocused)?.application }
+
+  // // Get the active application icon
+  // static get activeAppIcon() { return MacApplication.#activeApplication?.icon || 'icons/finder.png' }
 
   /**
    * Opens a file with the associated application

@@ -1,5 +1,4 @@
-class UiIcon extends HTMLElement {
-  #focused = false; 
+class UIIcon extends HTMLElement {
   #open = false;
   #icon;
 
@@ -11,21 +10,19 @@ class UiIcon extends HTMLElement {
     this.tabIndex = 0;
     this.addEventListener('click', this.onClick);
     this.addEventListener('dblclick', this.onDblClick);
-    this.addEventListener('blur', this.onBlur);
   }
 
   disconnectedCallback() {
     this.removeEventListener('click', this.onClick);
     this.removeEventListener('dblclick', this.onDblClick);
-    this.removeEventListener('blur', this.onBlur);
   }
 
   onClick = (e) => {
-    this.parentElement.querySelectorAll('ui-icon').forEach(icon => {
-      icon.blur() ;
+    this.parentElement.querySelectorAll('ui-icon[active]').forEach(icon => {
+      icon.blur();
       icon.updateIcon();
     });
-    this.#focused = true;
+    this.setAttribute('active', '');
     this.updateIcon();
   }
 
@@ -33,13 +30,8 @@ class UiIcon extends HTMLElement {
     MacApplication.emit('icon', 'dblclick', { icon: this });
   }
 
-  onBlur = () => {
-    this.#focused = false;
-    this.updateIcon();
-  }
-
   blur = () => {
-    this.#focused = false;
+    this.removeAttribute('active');
     this.updateIcon();
   }
 
@@ -49,7 +41,7 @@ class UiIcon extends HTMLElement {
 
   get #state() {
     if (this.#open) return 'open';
-    if (this.#focused) return 'focused';
+    if (this.hasAttribute('active')) return 'focused';
     return 'normal';
   } 
 
@@ -76,9 +68,21 @@ class UiIcon extends HTMLElement {
   }
 }
 
-class UiIcons extends HTMLElement {
+class UIIcons extends HTMLElement {
   constructor() {
     super();
+  }
+
+  connectedCallback() {
+    this.addEventListener('click', this.onClick);
+  }
+
+  onClick = (e) => {
+    if (!(e.target instanceof UIIcon)) {
+      this.querySelectorAll('ui-icon').forEach(icon => {
+        icon.blur();
+      });
+    }
   }
 
   updateState() {
@@ -98,8 +102,8 @@ class UiIcons extends HTMLElement {
   }
 }
 
-globalThis.UiIcon = UiIcon;
-globalThis.UiIcons = UiIcons;
+globalThis.UIIcon = UIIcon;
+globalThis.UIIcons = UIIcons;
 
-customElements.define('ui-icon', UiIcon);
-customElements.define('ui-icons', UiIcons);
+customElements.define('ui-icon', UIIcon);
+customElements.define('ui-icons', UIIcons);
