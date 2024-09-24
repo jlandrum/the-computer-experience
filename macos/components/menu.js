@@ -256,14 +256,9 @@ class AppMenuItem extends MenuItem {
     super.connectedCallback();
     
     this.watcher = setInterval(() => {
-      if (MacApplication.activeApplication.name !== 'Finder') {
-        this.setAttribute('title', MacApplication.activeApplication.name);
-        this.setAttribute('icon', MacApplication.activeApplication.icon);
-        this.style.setProperty('--icon', `url(/macos/${MacApplication.activeApplication.icon})`);
-      } else {
-        this.setAttribute('title', 'Finder');
-        this.removeAttribute('icon');
-      }
+      this.setAttribute('title', MacApplication.activeApplication.name);
+      this.setAttribute('icon', MacApplication.activeApplication.icon);
+      this.style.setProperty('--icon', `url(/macos/${MacApplication.activeApplication.icon})`);
     }, 1000);
   }
 

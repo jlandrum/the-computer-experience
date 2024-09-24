@@ -8,7 +8,7 @@ if (typeof FinderApp === 'undefined') {
     }
 
     get name() { return 'Finder' }   
-    get icon() { return 'finder/icon.png' }
+    get icon() { return 'apps/finder/icon.png' }
 
     newWindow = ({path}) => {
       const existingWindow = this.getWindowControllers().find(window => window.path === path);
